@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -7,29 +7,32 @@ import {
   TouchableOpacity,
   Modal,
   Dimensions,
-} from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
-import { createMaterialBottomTabNavigator } from '@react-navigation/material-bottom-tabs';
-import { Provider as PaperProvider, TextInput, Button } from 'react-native-paper';
-import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import Swipeable from 'react-native-swipeable';
+} from "react-native";
+import { useNavigation } from "@react-navigation/native"; // Import useNavigation hook
+import { NavigationContainer } from "@react-navigation/native";
+import { createMaterialBottomTabNavigator } from "@react-navigation/material-bottom-tabs";
+import {
+  Provider as PaperProvider,
+  TextInput,
+  Button,
+} from "react-native-paper";
+import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
+import Icon from "react-native-vector-icons/MaterialCommunityIcons";
+import Swipeable from "react-native-swipeable";
 
 const Tab = createMaterialBottomTabNavigator();
 
-import { projects, addProject, deleteProject } from '../data/projectsData'; // Import projects data, addProject, and deleteProject functions
-import { tasks, addTask } from '../data/tasksData'; // Import tasks data and addTask function
+import { projects, addProject, deleteProject } from "../data/projectsData"; // Import projects data, addProject, and deleteProject functions
+import { tasks, addTask } from "../data/tasksData"; // Import tasks data and addTask function
 
 const ProjectScreen = ({ navigation, route }) => {
-  const [newProjectName, setNewProjectName] = useState('');
-  const [newProjectDescription, setNewProjectDescription] = useState('');
+  const [newProjectName, setNewProjectName] = useState("");
+  const [newProjectDescription, setNewProjectDescription] = useState("");
   const [showInputs, setShowInputs] = useState(false);
   const [isAddingProject, setAddingProject] = useState(false);
- // const userEmail = route.params.email;
- // const userName = userEmail.split('@')[0];
 
   // Get the device's screen dimensions
-  const { width, height } = Dimensions.get('window');
+  const { width, height } = Dimensions.get("window");
   // Set the modal height and width based on screen dimensions
   const modalWidth = width - 32; // Adjust as needed
   const modalHeight = height * 0.7; // Adjust as needed
@@ -64,10 +67,11 @@ const ProjectScreen = ({ navigation, route }) => {
       </TouchableOpacity>,
     ];
 
+
     return (
       <Swipeable leftContent={leftContent} rightButtons={rightContent}>
         <TouchableOpacity
-          onPress={() => navigation.navigate('Tasks', { project: item })}
+          onPress={() => navigation.navigate("Task", { projectId: item.id })} // Pass the project's ID as 'projectId'
           style={styles.projectItem}
         >
           <View style={styles.projectDetails}>
@@ -88,16 +92,16 @@ const ProjectScreen = ({ navigation, route }) => {
   };
 
   const addNewProject = () => {
-    if (newProjectName.trim() === '') {
-      alert('Project name cannot be empty');
+    if (newProjectName.trim() === "") {
+      alert("Project name cannot be empty");
       return;
     }
     addProject(newProjectName, newProjectDescription); // Use the addProject function from the data file
-    setNewProjectName('');
-    setNewProjectDescription('');
+    setNewProjectName("");
+    setNewProjectDescription("");
     setShowInputs(false);
     closeAddProjectModal();
-    navigation.navigate('Projects');
+    navigation.navigate("Projects");
   };
 
   return (
@@ -128,7 +132,12 @@ const ProjectScreen = ({ navigation, route }) => {
         onRequestClose={closeAddProjectModal}
       >
         <View style={styles.modalContainer}>
-          <View style={[styles.modalContent, { width: modalWidth, maxHeight: modalHeight }]}>
+          <View
+            style={[
+              styles.modalContent,
+              { width: modalWidth, maxHeight: modalHeight },
+            ]}
+          >
             <Text style={styles.modalTitle}>Add Project</Text>
             <TextInput
               label="Project Name"
@@ -142,10 +151,18 @@ const ProjectScreen = ({ navigation, route }) => {
               onChangeText={setNewProjectDescription}
               style={styles.input}
             />
-            <Button mode="contained" onPress={addNewProject} style={styles.button}>
+            <Button
+              mode="contained"
+              onPress={addNewProject}
+              style={styles.button}
+            >
               Add Project
             </Button>
-            <Button mode="outlined" onPress={closeAddProjectModal} style={styles.button}>
+            <Button
+              mode="outlined"
+              onPress={closeAddProjectModal}
+              style={styles.button}
+            >
               Cancel
             </Button>
           </View>
@@ -158,37 +175,37 @@ const ProjectScreen = ({ navigation, route }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#9DB5B2',
+    backgroundColor: "#9DB5B2",
     padding: 16,
   },
   userInfo: {
     marginTop: 20,
     marginBottom: 20,
-    alignItems: 'center',
+    alignItems: "center",
   },
   greeting: {
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 8,
-    color: 'white',
+    color: "white",
   },
   projectHeader: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 16,
-    color: 'white',
+    color: "white",
   },
   projectItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
-    backgroundColor: 'white',
+    borderBottomColor: "#ccc",
+    backgroundColor: "white",
     borderRadius: 8,
     marginBottom: 8,
-    shadowColor: 'black',
+    shadowColor: "black",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 2,
@@ -199,13 +216,13 @@ const styles = StyleSheet.create({
   },
   projectName: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 4,
-    color: '#333',
+    color: "#333",
   },
   projectDescription: {
     fontSize: 14,
-    color: '#666',
+    color: "#666",
   },
   addButton: {
     marginTop: 16,
@@ -218,15 +235,15 @@ const styles = StyleSheet.create({
   },
   modalContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
   },
   modalContent: {
-    backgroundColor: 'white',
+    backgroundColor: "white",
     padding: 20,
     borderRadius: 8,
-    shadowColor: 'black',
+    shadowColor: "black",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 2,
@@ -234,21 +251,21 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 16,
   },
   swipeItemLeft: {
     flex: 1,
-    backgroundColor: 'blue',
-    justifyContent: 'center',
+    backgroundColor: "blue",
+    justifyContent: "center",
     paddingLeft: 20,
   },
   swipeItemRight: {
     flex: 1,
-    backgroundColor: 'red',
-    justifyContent: 'center',
+    backgroundColor: "red",
+    justifyContent: "center",
     paddingLeft: 20,
-    flexDirection: 'row',
+    flexDirection: "row",
   },
 });
 
