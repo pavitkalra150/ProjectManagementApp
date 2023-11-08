@@ -1,21 +1,46 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  Image,
-  KeyboardAvoidingView,
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
-import { getUserData } from '../data/UserDataManager'; // Import the getUserData function from UserDataManager
+import { getUserData } from '../data/UserDataManager';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const AuthScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [emailError, setEmailError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+
+  useEffect(() => {
+    const initializeRememberedData = async () => {
+      const rememberedEmail = await AsyncStorage.getItem('rememberedEmail');
+      const rememberedPassword = await AsyncStorage.getItem('rememberedPassword');
+      if (rememberedEmail && rememberedPassword) {
+        setEmail(rememberedEmail);
+        setPassword(rememberedPassword);
+      }
+    };
+    initializeRememberedData();
+  }, []);
 
   const handleLogin = async () => {
+    // Validate email
+    if (!validateEmail(email)) {
+      setEmailError('Invalid email format');
+      return;
+    }
+
+    // Validate password
+    if (!password || password.trim() === '') {
+      setPasswordError('Password is required');
+      return;
+    }
+
     const userData = await getUserData();
     const user = userData.find(
       (u) => u.email.trim() === email.trim() && u.password === password
@@ -23,10 +48,17 @@ const AuthScreen = ({ navigation }) => {
 
     if (user) {
       console.log('Login successful');
-      navigation.navigate('Task'); 
+      navigation.navigate('Main', { email });
     } else {
       console.log('Login failed. Invalid email or password.');
+      setEmailError('');
+      setPasswordError('Invalid email or password');
     }
+  };
+
+  // Email validation function
+  const validateEmail = (email) => {
+    return email.includes('@');
   };
 
   return (
@@ -35,26 +67,34 @@ const AuthScreen = ({ navigation }) => {
       resetScrollToCoords={{ x: 0, y: 0 }}
       scrollEnabled={true}
     >
-      {/* <Image
-        source={require('./path/to/your-logo.png')}
-        style={styles.logo}
-      /> */}
       <Text style={styles.header}>Welcome to Project Management</Text>
       <TextInput
         style={styles.input}
         placeholder="Email"
         value={email}
-        onChangeText={setEmail}
+        onChangeText={(text) => {
+          setEmail(text);
+          setEmailError('');
+        }}
       />
+      {emailError ? (
+        <Text style={styles.errorText}>{emailError}</Text>
+      ) : null}
       <TextInput
         style={styles.input}
         placeholder="Password"
         secureTextEntry={true}
         value={password}
-        onChangeText={setPassword}
+        onChangeText={(text) => {
+          setPassword(text);
+          setPasswordError('');
+        }}
       />
+      {passwordError ? (
+        <Text style={styles.errorText}>{passwordError}</Text>
+      ) : null}
       <TouchableOpacity
-        style={[styles.loginButton, { width: '100%' }]}
+        style={styles.loginButton}
         onPress={handleLogin}
       >
         <Text style={styles.buttonText}>Login</Text>
@@ -66,21 +106,16 @@ const AuthScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#fff',
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#fff',
     padding: 20,
-  },
-  logo: {
-    width: 100,
-    height: 100,
-    marginBottom: 20,
   },
   header: {
     fontSize: 28,
     fontWeight: 'bold',
     marginBottom: 20,
-    color: '#333',
+    color: '#007BFF', // Changed text color to blue
   },
   input: {
     width: '100%',
@@ -92,15 +127,21 @@ const styles = StyleSheet.create({
     paddingLeft: 10,
   },
   loginButton: {
-    backgroundColor: '#007BFF',
+    backgroundColor: '#007BFF', // Changed button color to blue
     borderRadius: 8,
     paddingVertical: 12,
-    paddingHorizontal: 10,
+    paddingHorizontal: 20, // Increased button padding
+    marginTop: 20, // Added margin to separate the button from inputs
   },
   buttonText: {
     color: '#fff',
     fontSize: 18,
     textAlign: 'center',
+  },
+  errorText: {
+    color: 'red',
+    fontSize: 16,
+    marginBottom: 10, // Added margin to separate error messages
   },
 });
 
