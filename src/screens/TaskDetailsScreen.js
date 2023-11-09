@@ -7,8 +7,26 @@ const TaskDetailsScreen = ({ route }) => {
   return (
     <View style={styles.container}>
       <Text style={styles.header}>Task Details</Text>
-      <Text style={styles.taskName}>{task.name}</Text>
-      <Text style={styles.taskDescription}>{task.description}</Text>
+      <View style={styles.detailsContainer}>
+        <Text style={styles.label}>Task Name:</Text>
+        <Text style={styles.value}>{task.name}</Text>
+      </View>
+      <View style={styles.detailsContainer}>
+        <Text style={styles.label}>Description:</Text>
+        <Text style={styles.value}>{task.description}</Text>
+      </View>
+      <View style={styles.detailsContainer}>
+        <Text style={styles.label}>Project:</Text>
+        <Text style={styles.value}>{task.projectId}</Text>
+      </View>
+      <View style={styles.detailsContainer}>
+        <Text style={styles.label}>Due Date:</Text>
+        <Text style={styles.value}>{task.dueDate}</Text>
+      </View>
+      <View style={styles.detailsContainer}>
+        <Text style={styles.label}>Assigned To:</Text>
+        <Text style={styles.value}>{task.assignedTo}</Text>
+      </View>
     </View>
   );
 };
@@ -23,15 +41,17 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     color: '#4d8d89',
+    marginBottom: 20,
   },
-  taskName: {
-    fontSize: 18,
+  detailsContainer: {
+    marginBottom: 16,
+  },
+  label: {
+    fontSize: 16,
     fontWeight: 'bold',
-    marginBottom: 4,
     color: '#333',
   },
-  taskDescription: {
-    marginTop: 20,
+  value: {
     fontSize: 14,
     color: '#666',
   },

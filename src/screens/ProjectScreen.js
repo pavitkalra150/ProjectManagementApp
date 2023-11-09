@@ -71,7 +71,7 @@ const ProjectScreen = ({ navigation, route }) => {
     return (
       <Swipeable leftContent={leftContent} rightButtons={rightContent}>
         <TouchableOpacity
-          onPress={() => navigation.navigate("Task", { projectId: item.id })} // Pass the project's ID as 'projectId'
+          onPress={() => navigation.navigate("Task", { projectId: item.id })} 
           style={styles.projectItem}
         >
           <View style={styles.projectDetails}>

@@ -1,25 +1,23 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
-import { createMaterialBottomTabNavigator } from '@react-navigation/material-bottom-tabs';
-import { Provider as PaperProvider, TextInput, Button as PaperButton } from 'react-native-paper';
-import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import ProjectScreen from './ProjectScreen';
-const Tab = createMaterialBottomTabNavigator();
-import { projects, addProject, deleteProject } from '../data/projectsData'; // Import projects data, addProject, and deleteProject functions
-import { tasks, addTask } from '../data/tasksData'; // Import tasks data and addTask function
-
-
+import { tasks } from '../data/tasksData'; // Import tasks data
+import { projects } from '../data/projectsData'; // Import projects data
 
 const TaskScreen = ({ route, navigation }) => {
-  //const { project } = route.params;
+  const { projectId } = route.params;
+
+  // Find the project with the given projectId
+  const project = projects.find((project) => project.id === projectId);
+
+  // Filter tasks based on the projectId
+  const projectTasks = tasks.filter((task) => task.projectId === projectId);
 
   return (
     <ScrollView style={styles.container}>
-      <Text style={styles.header}>Tasks for project.name</Text>
+      <Text style={styles.header}>Tasks for {project ? project.name : ''}</Text>
       <View style={styles.contentContainer}>
         <FlatList
-          data={tasks}
+          data={projectTasks}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
             <TouchableOpacity

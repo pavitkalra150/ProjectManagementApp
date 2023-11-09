@@ -1,13 +1,18 @@
 export const projects = [
   {
-    id: getRandomId(),
+    id: 1,
     name: "Project 1",
     description: "Description of Project 1",
   },
   {
-    id: getRandomId(),
+    id: 2,
     name: "Project 2",
     description: "Description of Project 2",
+  },
+  {
+    id: 3,
+    name: "Project 3",
+    description: "Description of Project 3",
   },
   // Add more projects here
 ];
