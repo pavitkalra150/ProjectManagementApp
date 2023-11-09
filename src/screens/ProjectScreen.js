@@ -8,7 +8,7 @@ import {
   Modal,
   Dimensions,
 } from "react-native";
-import { useNavigation } from "@react-navigation/native"; // Import useNavigation hook
+import { useNavigation } from "@react-navigation/native"; 
 import { NavigationContainer } from "@react-navigation/native";
 import { createMaterialBottomTabNavigator } from "@react-navigation/material-bottom-tabs";
 import {
@@ -113,7 +113,7 @@ const ProjectScreen = ({ navigation, route }) => {
 
       <FlatList
         data={projects}
-        keyExtractor={(item) => item.id.toString()} // Make sure to convert id to a string
+        keyExtractor={(item) => item.id.toString()} 
         renderItem={renderItem}
       />
 

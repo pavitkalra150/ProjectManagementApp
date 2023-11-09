@@ -1,20 +1,30 @@
-import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-} from 'react-native';
-import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+import React, { useState, useCallback, useEffect } from 'react';
+import { View, Text, TextInput, TouchableOpacity, Image, Switch, SafeAreaView } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
 import { getUserData } from '../data/UserDataManager';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const AuthScreen = ({ navigation }) => {
+const themeColors = {
+    bg: '#9DB5B2',
+};
+
+function AuthScreen() {
+  const navigation = useNavigation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
+
+  const togglePasswordVisibility = useCallback(() => {
+    setShowPassword((prevShowPassword) => !prevShowPassword);
+  }, []);
+
+  const handleRememberMeToggle = () => {
+    setRememberMe((prevRememberMe) => !prevRememberMe);
+  };
 
   useEffect(() => {
     const initializeRememberedData = async () => {
@@ -49,6 +59,14 @@ const AuthScreen = ({ navigation }) => {
     if (user) {
       console.log('Login successful');
       navigation.navigate('Main', { email });
+
+      // Save email in AsyncStorage if rememberMe is enabled
+      if (rememberMe) {
+        await AsyncStorage.setItem('rememberedEmail', email);
+      } else {
+        // Clear rememberedEmail if rememberMe is not enabled
+        await AsyncStorage.removeItem('rememberedEmail');
+      }
     } else {
       console.log('Login failed. Invalid email or password.');
       setEmailError('');
@@ -62,87 +80,113 @@ const AuthScreen = ({ navigation }) => {
   };
 
   return (
-    <KeyboardAwareScrollView
-      contentContainerStyle={styles.container}
-      resetScrollToCoords={{ x: 0, y: 0 }}
-      scrollEnabled={true}
-    >
-      <Text style={styles.header}>Welcome to Project Management</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Email"
-        value={email}
-        onChangeText={(text) => {
-          setEmail(text);
-          setEmailError('');
-        }}
-      />
-      {emailError ? (
-        <Text style={styles.errorText}>{emailError}</Text>
-      ) : null}
-      <TextInput
-        style={styles.input}
-        placeholder="Password"
-        secureTextEntry={true}
-        value={password}
-        onChangeText={(text) => {
-          setPassword(text);
-          setPasswordError('');
-        }}
-      />
-      {passwordError ? (
-        <Text style={styles.errorText}>{passwordError}</Text>
-      ) : null}
-      <TouchableOpacity
-        style={styles.loginButton}
-        onPress={handleLogin}
-      >
-        <Text style={styles.buttonText}>Login</Text>
-      </TouchableOpacity>
-    </KeyboardAwareScrollView>
+    <View style={{ flex: 1, backgroundColor: themeColors.bg }}>
+      <SafeAreaView style={{ flex: 1 }}>
+        <View style={{ flexDirection: 'row', justifyContent: 'start' }}>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={{
+              backgroundColor: '#FFD700',
+              padding: 10,
+              borderRadius: 20,
+              marginLeft: 20,
+            }}
+          >
+            {/* <Image source={require('../assets/arrow-left-icon.png')} style={{ width: 20, height: 20 }} /> */}
+          </TouchableOpacity>
+        </View>
+        <View style={{ flexDirection: 'row', justifyContent: 'center' }}>
+          <Image
+            source={require('../../assets/login.png')}
+            style={{ width: 200, height: 200 }}
+          />
+        </View>
+      </SafeAreaView>
+      <View style={{ borderTopLeftRadius: 50, borderTopRightRadius: 50, flex: 1, backgroundColor: 'white', paddingHorizontal: 20, paddingTop: 20 }}>
+        <View style={{ marginBottom: 10 }}>
+          <Text style={{ color: 'gray', marginLeft: 20 }}>Email Address</Text>
+          <TextInput
+            style={{
+              padding: 10,
+              backgroundColor: '#F0F0F0',
+              color: 'gray',
+              borderRadius: 10,
+              marginBottom: 10,
+            }}
+            placeholder="email"
+            value={email}
+            onChangeText={(text) => {
+              setEmail(text);
+              setEmailError('');
+            }}
+          />
+          {emailError ? <Text style={{ color: 'red', marginLeft: 20 }}>{emailError}</Text> : null}
+        </View>
+        <View style={{ marginBottom: 10 }}>
+          <Text style={{ color: 'gray', marginLeft: 20 }}>Password</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <TextInput
+              style={{
+                flex: 1,
+                padding: 10,
+                backgroundColor: '#F0F0F0',
+                color: 'gray',
+                borderRadius: 10,
+              }}
+              secureTextEntry={!showPassword}
+              placeholder="password"
+              value={password}
+              onChangeText={(text) => {
+                setPassword(text);
+                setPasswordError('');
+              }}
+            />
+            <TouchableOpacity onPress={togglePasswordVisibility}>
+              <Ionicons
+                name={showPassword ? 'eye-off' : 'eye'}
+                size={24}
+                color="gray"
+                style={{ padding: 10 }}
+              />
+            </TouchableOpacity>
+          </View>
+          {passwordError ? <Text style={{ color: 'red', marginLeft: 20 }}>{passwordError}</Text> : null}
+        </View>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
+          <Text style={{ color: 'gray', marginLeft: 20 }}>Remember Me</Text>
+          <Switch
+            value={rememberMe}
+            onValueChange={handleRememberMeToggle}
+            style={{ marginLeft: 'auto', marginRight: 20 }}
+          />
+        </View>
+        <TouchableOpacity
+          style={{
+            padding: 10,
+            backgroundColor: '#FFD700',
+            borderRadius: 10,
+          }}
+          onPress={handleLogin}
+        >
+          <Text style={{
+            fontSize: 20,
+            fontWeight: 'bold',
+            textAlign: 'center',
+            color: 'gray',
+          }}>
+            Login
+          </Text>
+        </TouchableOpacity>
+        <Text style={{
+          fontSize: 20,
+          color: 'gray',
+          fontWeight: 'bold',
+          textAlign: 'center',
+          paddingTop: 30,
+        }}/>
+      </View>
+    </View>
   );
-};
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  header: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    marginBottom: 20,
-    color: '#007BFF', // Changed text color to blue
-  },
-  input: {
-    width: '100%',
-    height: 40,
-    borderColor: '#ccc',
-    borderWidth: 1,
-    borderRadius: 8,
-    marginVertical: 10,
-    paddingLeft: 10,
-  },
-  loginButton: {
-    backgroundColor: '#007BFF', // Changed button color to blue
-    borderRadius: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 20, // Increased button padding
-    marginTop: 20, // Added margin to separate the button from inputs
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 18,
-    textAlign: 'center',
-  },
-  errorText: {
-    color: 'red',
-    fontSize: 16,
-    marginBottom: 10, // Added margin to separate error messages
-  },
-});
+}
 
 export default AuthScreen;
