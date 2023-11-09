@@ -1,12 +1,12 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Image, Switch, SafeAreaView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Image, Switch, SafeAreaView, TouchableWithoutFeedback, Keyboard } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { getUserData } from '../data/UserDataManager';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const themeColors = {
-    bg: '#9DB5B2',
+  bg: '#9DB5B2',
 };
 
 function AuthScreen() {
@@ -79,113 +79,119 @@ function AuthScreen() {
     return email.includes('@');
   };
 
+  const dismissKeyboard = () => {
+    Keyboard.dismiss();
+  };
+
   return (
-    <View style={{ flex: 1, backgroundColor: themeColors.bg }}>
-      <SafeAreaView style={{ flex: 1 }}>
-        <View style={{ flexDirection: 'row', justifyContent: 'start' }}>
-          <TouchableOpacity
-            onPress={() => navigation.goBack()}
-            style={{
-              backgroundColor: '#FFD700',
-              padding: 10,
-              borderRadius: 20,
-              marginLeft: 20,
-            }}
-          >
-            {/* <Image source={require('../assets/arrow-left-icon.png')} style={{ width: 20, height: 20 }} /> */}
-          </TouchableOpacity>
-        </View>
-        <View style={{ flexDirection: 'row', justifyContent: 'center' }}>
-          <Image
-            source={require('../../assets/login.png')}
-            style={{ width: 200, height: 200 }}
-          />
-        </View>
-      </SafeAreaView>
-      <View style={{ borderTopLeftRadius: 50, borderTopRightRadius: 50, flex: 1, backgroundColor: 'white', paddingHorizontal: 20, paddingTop: 20 }}>
-        <View style={{ marginBottom: 10 }}>
-          <Text style={{ color: 'gray', marginLeft: 20 }}>Email Address</Text>
-          <TextInput
-            style={{
-              padding: 10,
-              backgroundColor: '#F0F0F0',
-              color: 'gray',
-              borderRadius: 10,
-              marginBottom: 10,
-            }}
-            placeholder="email"
-            value={email}
-            onChangeText={(text) => {
-              setEmail(text);
-              setEmailError('');
-            }}
-          />
-          {emailError ? <Text style={{ color: 'red', marginLeft: 20 }}>{emailError}</Text> : null}
-        </View>
-        <View style={{ marginBottom: 10 }}>
-          <Text style={{ color: 'gray', marginLeft: 20 }}>Password</Text>
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+    <TouchableWithoutFeedback onPress={dismissKeyboard}>
+      <View style={{ flex: 1, backgroundColor: themeColors.bg }}>
+        <SafeAreaView style={{ flex: 1 }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'start' }}>
+            <TouchableOpacity
+              onPress={() => navigation.goBack()}
+              style={{
+                backgroundColor: '#FFD700',
+                padding: 10,
+                borderRadius: 20,
+                marginLeft: 20,
+              }}
+            >
+              {/* <Image source={require('../assets/arrow-left-icon.png')} style={{ width: 20, height: 20 }} /> */}
+            </TouchableOpacity>
+          </View>
+          <View style={{ flexDirection: 'row', justifyContent: 'center' }}>
+            <Image
+              source={require('../../assets/login.png')}
+              style={{ width: 200, height: 200 }}
+            />
+          </View>
+        </SafeAreaView>
+        <View style={{ borderTopLeftRadius: 50, borderTopRightRadius: 50, flex: 1, backgroundColor: 'white', paddingHorizontal: 20, paddingTop: 20 }}>
+          <View style={{ marginBottom: 10 }}>
+            <Text style={{ color: 'gray', marginLeft: 20 }}>Email Address</Text>
             <TextInput
               style={{
-                flex: 1,
                 padding: 10,
                 backgroundColor: '#F0F0F0',
                 color: 'gray',
                 borderRadius: 10,
+                marginBottom: 10,
               }}
-              secureTextEntry={!showPassword}
-              placeholder="password"
-              value={password}
+              placeholder="email"
+              value={email}
               onChangeText={(text) => {
-                setPassword(text);
-                setPasswordError('');
+                setEmail(text);
+                setEmailError('');
               }}
             />
-            <TouchableOpacity onPress={togglePasswordVisibility}>
-              <Ionicons
-                name={showPassword ? 'eye-off' : 'eye'}
-                size={24}
-                color="gray"
-                style={{ padding: 10 }}
-              />
-            </TouchableOpacity>
+            {emailError ? <Text style={{ color: 'red', marginLeft: 20 }}>{emailError}</Text> : null}
           </View>
-          {passwordError ? <Text style={{ color: 'red', marginLeft: 20 }}>{passwordError}</Text> : null}
-        </View>
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
-          <Text style={{ color: 'gray', marginLeft: 20 }}>Remember Me</Text>
-          <Switch
-            value={rememberMe}
-            onValueChange={handleRememberMeToggle}
-            style={{ marginLeft: 'auto', marginRight: 20 }}
-          />
-        </View>
-        <TouchableOpacity
-          style={{
-            padding: 10,
-            backgroundColor: '#FFD700',
-            borderRadius: 10,
-          }}
-          onPress={handleLogin}
-        >
+          <View style={{ marginBottom: 10 }}>
+            <Text style={{ color: 'gray', marginLeft: 20 }}>Password</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <TextInput
+                style={{
+                  flex: 1,
+                  padding: 10,
+                  backgroundColor: '#F0F0F0',
+                  color: 'gray',
+                  borderRadius: 10,
+                }}
+                secureTextEntry={!showPassword}
+                placeholder="password"
+                value={password}
+                onChangeText={(text) => {
+                  setPassword(text);
+                  setPasswordError('');
+                }}
+              />
+              <TouchableOpacity onPress={togglePasswordVisibility}>
+                <Ionicons
+                  name={showPassword ? 'eye-off' : 'eye'}
+                  size={24}
+                  color="gray"
+                  style={{ padding: 10 }}
+                />
+              </TouchableOpacity>
+            </View>
+            {passwordError ? <Text style={{ color: 'red', marginLeft: 20 }}>{passwordError}</Text> : null}
+          </View>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
+            <Text style={{ color: 'gray', marginLeft: 20 }}>Remember Me</Text>
+            <Switch
+              value={rememberMe}
+              onValueChange={handleRememberMeToggle}
+              style={{ marginLeft: 'auto', marginRight: 20 }}
+            />
+          </View>
+          <TouchableOpacity
+            style={{
+              padding: 10,
+              backgroundColor: '#FFD700',
+              borderRadius: 10,
+            }}
+            onPress={handleLogin}
+          >
+            <Text style={{
+              fontSize: 20,
+              fontWeight: 'bold',
+              textAlign: 'center',
+              color: 'gray',
+            }}>
+              Login
+            </Text>
+          </TouchableOpacity>
           <Text style={{
             fontSize: 20,
+            color: 'gray',
             fontWeight: 'bold',
             textAlign: 'center',
-            color: 'gray',
-          }}>
-            Login
-          </Text>
-        </TouchableOpacity>
-        <Text style={{
-          fontSize: 20,
-          color: 'gray',
-          fontWeight: 'bold',
-          textAlign: 'center',
-          paddingTop: 30,
-        }}/>
+            paddingTop: 30,
+          }}/>
+        </View>
       </View>
-    </View>
+    </TouchableWithoutFeedback>
   );
 }
 
