@@ -1,24 +1,32 @@
-import * as React from 'react';
-import { NavigationContainer } from '@react-navigation/native';
-import { createStackNavigator } from '@react-navigation/stack';
-import { createMaterialBottomTabNavigator } from '@react-navigation/material-bottom-tabs';
-import HomeScreen from './src/screens/HomeScreen';
-import AuthScreen from './src/screens/AuthScreen';
-import ProjectScreen from './src/screens/ProjectScreen';
-import TaskScreen from './src/screens/TaskScreen';
-import TaskDetailsScreen from './src/screens/TaskDetailsScreen';
-import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons'; // Import your desired icon set
+import * as React from "react";
+import { NavigationContainer } from "@react-navigation/native";
+import { createStackNavigator } from "@react-navigation/stack";
+import { createMaterialBottomTabNavigator } from "@react-navigation/material-bottom-tabs";
+import HomeScreen from "./src/screens/HomeScreen";
+import AuthScreen from "./src/screens/AuthScreen";
+import ProjectScreen from "./src/screens/ProjectScreen";
+import TaskScreen from "./src/screens/TaskScreen";
+import TaskDetailsScreen from "./src/screens/TaskDetailsScreen";
+import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons"; // Import your desired icon set
 
 const Stack = createStackNavigator();
-const Tab = createMaterialBottomTabNavigator();
+const Tab = createStackNavigator();
 
 function App() {
   return (
     <NavigationContainer>
       <Stack.Navigator>
         <Stack.Screen name="Home" component={HomeScreen} />
-        <Stack.Screen name="Auth" component={AuthScreen} />
-        <Stack.Screen name="Main" component={MainNavigator} options={{ headerShown: false }} />
+        <Stack.Screen
+          name="Auth"
+          options={{ headerShown: false }}
+          component={AuthScreen}
+        />
+        <Stack.Screen
+          name="Main"
+          component={MainNavigator}
+          options={{ headerShown: false }}
+        />
         <Stack.Screen name="TaskDetails" component={TaskDetailsScreen} />
       </Stack.Navigator>
     </NavigationContainer>
@@ -32,12 +40,13 @@ function MainNavigator() {
       activeColor="#00A9B4"
       inactiveColor="#cccccc"
       barStyle={styles.tabBar}
+      screenOptions={{ headerShown: false }}
     >
       <Tab.Screen
         name="Project"
         component={ProjectScreen}
         options={{
-          tabBarLabel: 'Projects',
+          tabBarLabel: "Projects",
           tabBarIcon: ({ color }) => (
             <MaterialCommunityIcons name="home" color={color} size={26} />
           ),
@@ -48,9 +57,13 @@ function MainNavigator() {
         name="Task"
         component={TaskScreen}
         options={{
-          tabBarLabel: 'Tasks',
+          tabBarLabel: "Tasks",
           tabBarIcon: ({ color }) => (
-            <MaterialCommunityIcons name="format-list-checkbox" color={color} size={26} />
+            <MaterialCommunityIcons
+              name="format-list-checkbox"
+              color={color}
+              size={26}
+            />
           ),
           tabBarStyle: styles.tab,
         }}
@@ -61,7 +74,7 @@ function MainNavigator() {
 
 const styles = {
   tabBar: {
-    backgroundColor: '#4d8d89',
+    backgroundColor: "#4d8d89",
   },
   tab: {
     minHeight: 50, // Adjust the height as needed

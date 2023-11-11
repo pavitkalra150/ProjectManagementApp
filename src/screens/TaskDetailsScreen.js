@@ -1,41 +1,55 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { Card, Title, Paragraph } from 'react-native-paper';
 
 const TaskDetailsScreen = ({ route }) => {
   const { task } = route.params;
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.header}>Task Details</Text>
-      <View style={styles.detailsContainer}>
-        <Text style={styles.label}>Task Name:</Text>
-        <Text style={styles.value}>{task.name}</Text>
-      </View>
-      <View style={styles.detailsContainer}>
-        <Text style={styles.label}>Description:</Text>
-        <Text style={styles.value}>{task.description}</Text>
-      </View>
-      <View style={styles.detailsContainer}>
-        <Text style={styles.label}>Project:</Text>
-        <Text style={styles.value}>{task.projectId}</Text>
-      </View>
-      <View style={styles.detailsContainer}>
-        <Text style={styles.label}>Due Date:</Text>
-        <Text style={styles.value}>{task.dueDate}</Text>
-      </View>
-      <View style={styles.detailsContainer}>
-        <Text style={styles.label}>Assigned To:</Text>
-        <Text style={styles.value}>{task.assignedTo}</Text>
-      </View>
-    </View>
+    <ScrollView contentContainerStyle={styles.container}>
+      <Card style={styles.card}>
+        <Card.Content>
+          <Title style={styles.header}>Task Details</Title>
+
+          <View style={styles.detailsContainer}>
+            <Title style={styles.label}>Task Name</Title>
+            <Paragraph style={styles.value}>{task.name}</Paragraph>
+          </View>
+
+          <View style={styles.detailsContainer}>
+            <Title style={styles.label}>Description</Title>
+            <Paragraph style={styles.value}>{task.description}</Paragraph>
+          </View>
+
+          <View style={styles.detailsContainer}>
+            <Title style={styles.label}>Project</Title>
+            <Paragraph style={styles.value}>{task.projectId}</Paragraph>
+          </View>
+
+          <View style={styles.detailsContainer}>
+            <Title style={styles.label}>Due Date</Title>
+            <Paragraph style={styles.value}>{task.dueDate}</Paragraph>
+          </View>
+
+          <View style={styles.detailsContainer}>
+            <Title style={styles.label}>Assigned To</Title>
+            <Paragraph style={styles.value}>{task.assignedTo}</Paragraph>
+          </View>
+        </Card.Content>
+      </Card>
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: 'white',
+    flexGrow: 1,
+    backgroundColor: '#F5F5F5',
     padding: 16,
+  },
+  card: {
+    margin: 10,
+    elevation: 4, // Card elevation
   },
   header: {
     fontSize: 24,
@@ -44,7 +58,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   detailsContainer: {
-    marginBottom: 16,
+    marginBottom: 20,
   },
   label: {
     fontSize: 16,
