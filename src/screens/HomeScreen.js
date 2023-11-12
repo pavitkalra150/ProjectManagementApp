@@ -5,7 +5,6 @@ import { useNavigation } from '@react-navigation/native';
 
 const themeColors = {
   bg: '#9DB5B2',
-  
 };
 
 function HomeScreen() {

@@ -1,3 +1,7 @@
+
+
+
+import AsyncStorage from '@react-native-async-storage/async-storage';
 export const tasks = [
   {
     id: getRandomId(),
@@ -7,6 +11,8 @@ export const tasks = [
     assignedTo: "user1@example.com",
     dueDate: "2023-12-31",
     status: "Open",
+    dependencyId: null, // No dependency for the first task
+    hoursWorked: 0,
   },
   {
     id: getRandomId(),
@@ -16,6 +22,7 @@ export const tasks = [
     assignedTo: "user1@example.com",
     dueDate: "2023-11-15",
     status: "In Progress",
+    hoursWorked: 0,   
   },
   {
     id: getRandomId(),
@@ -25,6 +32,7 @@ export const tasks = [
     assignedTo: "user2@example.com",
     dueDate: "2023-11-15",
     status: "Completed",
+    hoursWorked: 0,
   },
   {
     id: getRandomId(),
@@ -34,6 +42,7 @@ export const tasks = [
     assignedTo: "user2@example.com",
     dueDate: "2023-11-15",
     status: "Open",
+    hoursWorked: 0,
   },
   {
     id: getRandomId(),
@@ -43,42 +52,7 @@ export const tasks = [
     assignedTo: "user2@example.com",
     dueDate: "2023-11-15",
     status: "Completed",
-  },
-  {
-    id: getRandomId(),
-    projectId: 1,
-    name: "Task 4",
-    description: "Description of Task 4",
-    assignedTo: "user2@example.com",
-    dueDate: "2023-11-15",
-    status: "Completed",
-  },
-  {
-    id: getRandomId(),
-    projectId: 1,
-    name: "Task 4",
-    description: "Description of Task 4",
-    assignedTo: "user2@example.com",
-    dueDate: "2023-11-15",
-    status: "Completed",
-  },
-  {
-    id: getRandomId(),
-    projectId: 1,
-    name: "Task 4",
-    description: "Description of Task 4",
-    assignedTo: "user2@example.com",
-    dueDate: "2023-11-15",
-    status: "Completed",
-  },
-  {
-    id: getRandomId(),
-    projectId: 1,
-    name: "Task 4",
-    description: "Description of Task 4",
-    assignedTo: "user2@example.com",
-    dueDate: "2023-11-15",
-    status: "Completed",
+    hoursWorked: 0,
   },
 
   // Add more tasks here
@@ -96,6 +70,7 @@ export function addTask(
   dueDate,
   status
 ) {
+  const lastTask = tasks[tasks.length - 1];
   const newTask = {
     id: getRandomId(),
     projectId: projectId,
@@ -104,6 +79,31 @@ export function addTask(
     assignedTo: assignedTo,
     dueDate: dueDate,
     status: status || "Open", // Default to 'Open' if status is not provided
+    dependencyId: lastTask ? lastTask.id : null,
+    hoursWorked: 0,
   };
-  tasks.push(newTask);
+
+  tasks.push(newTask); // This is still in-memory addition
+
+  // Save the tasks to AsyncStorage
+  saveTasksToStorage(tasks);
+}
+export async function loadTasksFromStorage() {
+  try {
+    const storedTasks = await AsyncStorage.getItem('tasks');
+    if (storedTasks !== null) {
+      return JSON.parse(storedTasks);
+    }
+  } catch (error) {
+    console.log('Error loading tasks:', error);
+  }
+  return [];
+}
+
+export function saveTasksToStorage(tasks) {
+  try {
+    AsyncStorage.setItem('tasks', JSON.stringify(tasks));
+  } catch (error) {
+    console.log('Error saving tasks:', error);
+  }
 }

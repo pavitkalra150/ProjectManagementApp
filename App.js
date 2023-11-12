@@ -24,16 +24,19 @@ function App() {
         />
         <Stack.Screen
           name="Main"
-          component={MainNavigator}
           options={{ headerShown: false }}
-        />
+        >
+          {props => <MainNavigator {...props} />}
+        </Stack.Screen>
         <Stack.Screen name="TaskDetails" component={TaskDetailsScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
 }
 
-function MainNavigator() {
+function MainNavigator({ route }) {
+  const { email } = route.params;
+
   return (
     <Tab.Navigator
       initialRouteName="Projects"
@@ -44,7 +47,6 @@ function MainNavigator() {
     >
       <Tab.Screen
         name="Project"
-        component={ProjectScreen}
         options={{
           tabBarLabel: "Projects",
           tabBarIcon: ({ color }) => (
@@ -52,7 +54,9 @@ function MainNavigator() {
           ),
           tabBarStyle: styles.tab,
         }}
-      />
+      >
+        {props => <ProjectScreen {...props} email={email} />}
+      </Tab.Screen>
       <Tab.Screen
         name="Task"
         component={TaskScreen}

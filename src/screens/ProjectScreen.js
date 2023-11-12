@@ -8,7 +8,7 @@ import {
   Modal,
   Dimensions,
 } from "react-native";
-import { useNavigation } from "@react-navigation/native"; 
+import { useNavigation } from "@react-navigation/native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createMaterialBottomTabNavigator } from "@react-navigation/material-bottom-tabs";
 import {
@@ -16,26 +16,52 @@ import {
   TextInput,
   Button,
 } from "react-native-paper";
-import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
-import Icon from "react-native-vector-icons/MaterialCommunityIcons";
-import Swipeable from "react-native-swipeable";
-
-const Tab = createMaterialBottomTabNavigator();
-
-import { projects, addProject, deleteProject } from "../data/projectsData"; // Import projects data, addProject, and deleteProject functions
+import { getUserData } from "../data/UserDataManager";
+import {
+  projects,
+  addProject,
+  deleteProject,
+  loadProjectsFromStorage,
+  computeProjectStatus,
+  computeProjectCost,
+} from "../data/projectsData"; // Import projects data, addProject, and deleteProject functions
 import { tasks, addTask } from "../data/tasksData"; // Import tasks data and addTask function
 
-const ProjectScreen = ({ navigation, route }) => {
+const ProjectScreen = ({ navigation, route, email }) => {
   const [newProjectName, setNewProjectName] = useState("");
   const [newProjectDescription, setNewProjectDescription] = useState("");
-  const [showInputs, setShowInputs] = useState(false);
   const [isAddingProject, setAddingProject] = useState(false);
 
-  // Get the device's screen dimensions
+  const [filteredProjects, setFilteredProjects] = useState([]); // State to hold filtered projects
+
   const { width, height } = Dimensions.get("window");
-  // Set the modal height and width based on screen dimensions
-  const modalWidth = width - 32; // Adjust as needed
-  const modalHeight = height * 0.7; // Adjust as needed
+  const modalWidth = width - 32;
+  const modalHeight = height * 0.7;
+
+  useEffect(() => {
+    if (route.params && route.params.email) {
+      setEmail(route.params.email);
+    }
+  }, [route.params]);
+
+  useEffect(() => {
+    if (email) {
+      const retrieveProjects = async () => {
+        const loadedProjects = await loadProjectsFromStorage(email);
+        if (loadedProjects) {
+          // Compute project status for each project
+          const projectsWithStatus = loadedProjects.map((project) => {
+            const status = computeProjectStatus(project.id, tasks);
+            return { ...project, status };
+          });
+          setFilteredProjects(projectsWithStatus);
+        } else {
+          console.log("Error loading projects or no projects found.");
+        }
+      };
+      retrieveProjects();
+    }
+  }, [email, tasks]);
 
   const openAddProjectModal = () => {
     setAddingProject(true);
@@ -46,74 +72,69 @@ const ProjectScreen = ({ navigation, route }) => {
   };
 
   const renderItem = ({ item }) => {
-    const leftContent = (
-      <View style={styles.swipeItemLeft}>
-        <MaterialCommunityIcons name="pencil" size={30} color="white" />
-      </View>
-    );
-
-    const rightContent = [
-      <TouchableOpacity
-        onPress={() => handleEditProject(item)}
-        style={styles.swipeItemRight}
-      >
-        <MaterialCommunityIcons name="pencil" size={30} color="white" />
-      </TouchableOpacity>,
-      <TouchableOpacity
-        onPress={() => handleDeleteProject(item.id)}
-        style={styles.swipeItemRight}
-      >
-        <MaterialCommunityIcons name="delete" size={30} color="white" />
-      </TouchableOpacity>,
-    ];
-
-
     return (
-      <Swipeable leftContent={leftContent} rightButtons={rightContent}>
-        <TouchableOpacity
-          onPress={() => navigation.navigate("Task", { projectId: item.id })} 
-          style={styles.projectItem}
-        >
-          <View style={styles.projectDetails}>
-            <Text style={styles.projectName}>{item.name}</Text>
-            <Text style={styles.projectDescription}>{item.description}</Text>
-          </View>
-        </TouchableOpacity>
-      </Swipeable>
+      <TouchableOpacity
+        onPress={() => navigation.navigate("Task", { projectId: item.id })}
+        style={styles.projectItem}
+      >
+        <View style={styles.projectDetails}>
+          <Text style={styles.projectName}>{item.name}</Text>
+          <Text style={styles.projectDescription}>{item.description}</Text>
+          <Text style={styles.projectStatus}>Status: {item.status}</Text>
+        </View>
+      </TouchableOpacity>
     );
   };
 
-  const handleEditProject = (project) => {
-    // Implement edit project functionality here
-  };
-
-  const handleDeleteProject = (projectId) => {
-    deleteProject(projectId); // Implement this function to delete a project
-  };
-
-  const addNewProject = () => {
+  const addNewProject = async () => {
     if (newProjectName.trim() === "") {
       alert("Project name cannot be empty");
       return;
     }
-    addProject(newProjectName, newProjectDescription); // Use the addProject function from the data file
-    setNewProjectName("");
-    setNewProjectDescription("");
-    setShowInputs(false);
-    closeAddProjectModal();
-    navigation.navigate("Projects");
+  
+    const added = addProject(newProjectName, newProjectDescription, email);
+    if (added) {
+      setNewProjectName("");
+      setNewProjectDescription("");
+      closeAddProjectModal();
+  
+      // Fetch the updated projects
+      const updatedProjects = await loadProjectsFromStorage(email);
+  
+    if (updatedProjects) {
+      try {
+        const user = await getUserData(); // Assuming this function returns a Promise
+        const projectsWithStatusAndCost = updatedProjects.map((project) => {
+          const status = computeProjectStatus(project.id, tasks);
+          const hourlyRate = user.find((u) => u.email === project.createdBy)?.hourlySalary || 0;
+          const cost = computeProjectCost(project.id, tasks, hourlyRate);
+          return { ...project, status, cost };
+        });
+  
+        setFilteredProjects(projectsWithStatusAndCost);
+      } catch (error) {
+        console.log("Error fetching user data:", error);
+      }
+    } else {
+      console.log("Error loading projects.");
+    }
+  
+    navigation.navigate("Projects", { createdBy: email });
+  } else {
+    console.log("Error adding the project.");
+  }
   };
 
   return (
     <View style={styles.container}>
       <View style={styles.userInfo}>
-        <Text style={styles.greeting}>Hello, username</Text>
+        <Text style={styles.greeting}>Hello, {email}</Text>
         <Text style={styles.projectHeader}>Your Projects:</Text>
       </View>
 
       <FlatList
-        data={projects}
-        keyExtractor={(item) => item.id.toString()} 
+        data={filteredProjects}
+        keyExtractor={(item) => item.id.toString()}
         renderItem={renderItem}
       />
 

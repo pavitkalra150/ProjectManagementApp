@@ -58,7 +58,7 @@ function AuthScreen() {
 
     if (user) {
       console.log('Login successful');
-      navigation.navigate('Main', { email });
+      navigation.navigate('Main', { email: email});
 
       // Save email in AsyncStorage if rememberMe is enabled
       if (rememberMe) {

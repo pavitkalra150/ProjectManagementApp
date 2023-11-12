@@ -8,13 +8,15 @@ import {
   ScrollView,
   Modal,
   Dimensions,
+  TouchableWithoutFeedback,
+  Keyboard,
 } from "react-native";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { TextInput, Button, useTheme } from "react-native-paper";
 import DateTimePickerModal from "react-native-modal-datetime-picker";
-
-import { tasks } from "../data/tasksData";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { tasks, addTask , loadTasksFromStorage, saveTasksToStorage} from "../data/tasksData";
 import { projects } from "../data/projectsData";
 
 const TaskScreen = ({ route, navigation }) => {
@@ -22,7 +24,7 @@ const TaskScreen = ({ route, navigation }) => {
   const project = projects.find((project) => project.id === projectId);
   const projectTasks = tasks.filter((task) => task.projectId === projectId);
   const groupedTasks = groupTasksByStatus(projectTasks);
-
+  
   const [selectedStatus, setSelectedStatus] = useState("All");
   const [isAddingTask, setAddingTask] = useState(false);
   const [taskName, setTaskName] = useState("");
@@ -42,7 +44,10 @@ const TaskScreen = ({ route, navigation }) => {
       value: status,
     })),
   ];
-
+  
+  const dismissKeyboard = () => {
+    Keyboard.dismiss();
+  };
   const openAddTaskModal = () => {
     setAddingTask(true);
   };
@@ -52,12 +57,35 @@ const TaskScreen = ({ route, navigation }) => {
   };
 
   const handleAddTask = () => {
-    console.log("Adding Task", {
+    const lastTask = projectTasks[projectTasks.length - 1]; // Assuming the last task is the previously added task
+  
+    const newTask = {
+      projectId: projectId,
+      name: taskName,
+      description: taskDescription,
+      assignedTo: assignedTo,
+      dueDate: dueDate,
+      status: "Open",
+      dependencyId: lastTask ? lastTask.id : null, // Set dependency to the last task's ID
+      hoursWorked: 0,
+    };
+  
+    addTask(
+      projectId,
       taskName,
       taskDescription,
-      dueDate,
       assignedTo,
-    });
+      dueDate,
+      "Open",
+      lastTask ? lastTask.id : null
+    );
+  
+    saveTasksToStorage([...tasks, newTask]);
+    console.log("Adding Task", newTask);
+    setTaskName("");
+    setTaskDescription("");
+    setAssignedTo("");
+    setDueDate("");
     closeAddTaskModal();
   };
 
@@ -130,83 +158,92 @@ const TaskScreen = ({ route, navigation }) => {
         <Text style={styles.addTaskButtonText}>Add Task</Text>
       </TouchableOpacity>
 
-      <Modal
-        visible={isAddingTask}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={closeAddTaskModal}
-      >
-        <View style={styles.modalContainer}>
-          <View
-            style={[
-              styles.modalContent,
-              { width: modalWidth, maxHeight: modalHeight },
-            ]}
-          >
-            <Text style={styles.modalTitle}>Add Task</Text>
-            <TextInput
-              label="Task Name"
-              value={taskName}
-              onChangeText={setTaskName}
+      <TouchableWithoutFeedback onPress={dismissKeyboard}>
+        <Modal
+          visible={isAddingTask}
+          animationType="slide"
+          transparent={true}
+          onRequestClose={closeAddTaskModal}
+        >
+          <View style={styles.modalContainer}>
+            <View
               style={[
-                styles.input,
-                { backgroundColor: theme.colors.background },
-              ]}
-              theme={{ colors: { primary: theme.colors.primary } }}
-            />
-            <TextInput
-              label="Task Description"
-              value={taskDescription}
-              onChangeText={setTaskDescription}
-              style={[
-                styles.input,
-                { backgroundColor: theme.colors.background },
-              ]}
-              theme={{ colors: { primary: theme.colors.primary } }}
-            />
-            <TouchableOpacity
-              onPress={openDueDatePicker}
-              style={[
-                styles.input,
-                { backgroundColor: theme.colors.background },
-                styles.datePickerInput,
+                styles.modalContent,
+                { width: modalWidth, maxHeight: modalHeight },
               ]}
             >
-              <Text>{dueDate ? dueDate : "Select Due Date"}</Text>
-            </TouchableOpacity>
-            <DateTimePickerModal
-              isVisible={dueDatePickerVisible}
-              onCancel={closeDueDatePicker}
-              date={dueDate ? new Date(dueDate) : new Date()}
-              onConfirm={handleDueDateChange}
-            />
-            <TextInput
-              label="Assigned To"
-              value={assignedTo}
-              onChangeText={setAssignedTo}
-              style={[
-                styles.input,
-                { backgroundColor: theme.colors.background },
-              ]}
-              theme={{ colors: { primary: theme.colors.primary } }}
-            />
-            <Button
-              mode="contained"
-              onPress={handleAddTask}
-              style={[styles.button, { backgroundColor: theme.colors.primary }]}
-            >
-              Add Task
-            </Button>
-            <Button
-              mode="outlined"
-              onPress={closeAddTaskModal}
-              style={[styles.button, { borderColor: theme.colors.primary }]}
-            >
-              Cancel
-            </Button>
+              <Text style={styles.modalTitle}>Add Task</Text>
+              <TextInput
+                label="Task Name"
+                value={taskName}
+                onChangeText={setTaskName}
+                onBlur={dismissKeyboard}
+                style={[
+                  styles.input,
+                  { backgroundColor: theme.colors.background },
+                ]}
+                theme={{ colors: { primary: theme.colors.primary } }}
+              />
+              <TextInput
+                label="Task Description"
+                value={taskDescription}
+                onChangeText={setTaskDescription}
+                onBlur={dismissKeyboard}
+                style={[
+                  styles.input,
+                  { backgroundColor: theme.colors.background },
+                ]}
+                theme={{ colors: { primary: theme.colors.primary } }}
+              />
+              <TouchableOpacity
+                onPress={openDueDatePicker}
+                onBlur={dismissKeyboard}
+                style={[
+                  styles.input,
+                  { backgroundColor: theme.colors.background },
+                  styles.datePickerInput,
+                ]}
+              >
+                <Text>{dueDate ? dueDate : "Select Due Date"}</Text>
+              </TouchableOpacity>
+              <DateTimePickerModal
+                isVisible={dueDatePickerVisible}
+                onCancel={closeDueDatePicker}
+                date={dueDate ? new Date(dueDate) : new Date()}
+                onConfirm={handleDueDateChange}
+              />
+              <TextInput
+                label="Assigned To"
+                value={assignedTo}
+                onChangeText={setAssignedTo}
+                onBlur={dismissKeyboard}
+                style={[
+                  styles.input,
+                  { backgroundColor: theme.colors.background },
+                ]}
+                theme={{ colors: { primary: theme.colors.primary } }}
+              />
+              <Button
+                mode="contained"
+                onPress={handleAddTask}
+                style={[
+                  styles.button,
+                  { backgroundColor: theme.colors.primary },
+                ]}
+              >
+                Add Task
+              </Button>
+              <Button
+                mode="outlined"
+                onPress={closeAddTaskModal}
+                style={[styles.button, { borderColor: theme.colors.primary }]}
+              >
+                Cancel
+              </Button>
+            </View>
           </View>
-        </View>
-      </Modal>
+        </Modal>
+      </TouchableWithoutFeedback>
     </SafeAreaView>
   );
 };

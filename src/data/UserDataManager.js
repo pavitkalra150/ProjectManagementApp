@@ -4,11 +4,11 @@ const STORAGE_KEY = "dummyUserData";
 
 // Define your initial dummy user data
 const initialDummyUserData = [
-  { email: "user1@example.com", password: "password1" },
-  { email: "user2@example.com", password: "password2" },
-  { email: "user3@example.com", password: "password3" },
-  { email: "user4@example.com", password: "password4" },
-  { email: "user5@example.com", password: "password5" },
+  { email: "user1@example.com", password: "password1", hourlySalary: 20 },
+  { email: "user2@example.com", password: "password2", hourlySalary: 25 },
+  { email: "user3@example.com", password: "password3", hourlySalary: 18 },
+  { email: "user4@example.com", password: "password4", hourlySalary: 22 },
+  { email: "user5@example.com", password: "password5", hourlySalary: 30 },
 ];
 
 // Initialize user data in AsyncStorage if it's not already set
