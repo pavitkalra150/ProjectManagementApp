@@ -49,12 +49,20 @@ const ProjectScreen = ({ navigation, route, email }) => {
       const retrieveProjects = async () => {
         const loadedProjects = await loadProjectsFromStorage(email);
         if (loadedProjects) {
-          // Compute project status for each project
-          const projectsWithStatus = loadedProjects.map((project) => {
-            const status = computeProjectStatus(project.id, tasks);
-            return { ...project, status };
-          });
-          setFilteredProjects(projectsWithStatus);
+          try {
+            const user = await getUserData(); // Assuming this function returns a Promise
+            const projectsWithCost = loadedProjects.map((project) => {
+              const status = computeProjectStatus(project.id, tasks);
+              const userHourlyRate = user.find((u) => u.email === project.createdBy);
+              const hourlyRate = userHourlyRate?.hourlySalary || 0;
+              const cost = computeProjectCost(project.id, tasks, hourlyRate);
+              return { ...project, status, cost };
+            });
+
+            setFilteredProjects(projectsWithCost);
+          } catch (error) {
+            console.log("Error calculating project cost:", error);
+          }
         } else {
           console.log("Error loading projects or no projects found.");
         }
@@ -81,6 +89,7 @@ const ProjectScreen = ({ navigation, route, email }) => {
           <Text style={styles.projectName}>{item.name}</Text>
           <Text style={styles.projectDescription}>{item.description}</Text>
           <Text style={styles.projectStatus}>Status: {item.status}</Text>
+          <Text style={styles.projectCost}>Cost: ${item.cost}</Text>
         </View>
       </TouchableOpacity>
     );
@@ -91,38 +100,36 @@ const ProjectScreen = ({ navigation, route, email }) => {
       alert("Project name cannot be empty");
       return;
     }
-  
+
     const added = addProject(newProjectName, newProjectDescription, email);
     if (added) {
       setNewProjectName("");
       setNewProjectDescription("");
       closeAddProjectModal();
-  
+
       // Fetch the updated projects
       const updatedProjects = await loadProjectsFromStorage(email);
-  
-    if (updatedProjects) {
-      try {
-        const user = await getUserData(); // Assuming this function returns a Promise
-        const projectsWithStatusAndCost = updatedProjects.map((project) => {
-          const status = computeProjectStatus(project.id, tasks);
-          const hourlyRate = user.find((u) => u.email === project.createdBy)?.hourlySalary || 0;
-          const cost = computeProjectCost(project.id, tasks, hourlyRate);
-          return { ...project, status, cost };
-        });
-  
-        setFilteredProjects(projectsWithStatusAndCost);
-      } catch (error) {
-        console.log("Error fetching user data:", error);
+
+      if (updatedProjects) {
+        try {
+          const user = await getUserData(); // Assuming this function returns a Promise
+          const projectsWithStatus = updatedProjects.map((project) => {
+            const status = computeProjectStatus(project.id, tasks);
+            return { ...project, status };
+          });
+
+          setFilteredProjects(projectsWithStatus);
+        } catch (error) {
+          console.log("Error fetching user data:", error);
+        }
+      } else {
+        console.log("Error loading projects.");
       }
+
+      navigation.navigate("Projects", { createdBy: email });
     } else {
-      console.log("Error loading projects.");
+      console.log("Error adding the project.");
     }
-  
-    navigation.navigate("Projects", { createdBy: email });
-  } else {
-    console.log("Error adding the project.");
-  }
   };
 
   return (
@@ -287,6 +294,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingLeft: 20,
     flexDirection: "row",
+  },
+  projectCost: {
+    fontSize: 14,
+    fontWeight: "bold",
+    color: "green",
   },
 });
 
