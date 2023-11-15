@@ -68,7 +68,6 @@ const TaskDetailsScreen = ({ route }) => {
 
     saveTasksToStorage(updatedTasks);
 
-    // Update the project status after saving the tasks
     const updatedProjectStatus = updateProjectStatus(
       task.projectId,
       updatedTasks
@@ -86,7 +85,7 @@ const TaskDetailsScreen = ({ route }) => {
     }
   }, [taskStatus, hoursWorked, task.status, task.hoursWorked]);
   useEffect(() => {
-    //console.log('Hours worked state after set1:', hoursWorked);
+    
   }, [hoursWorked]);
   const hasPendingDependencies = (currentTask, tasks) => {
     console.log("Current Task ID:", currentTask.id);
@@ -116,10 +115,10 @@ const TaskDetailsScreen = ({ route }) => {
       const storedHoursWorked = await AsyncStorage.getItem(
         `hours_worked_${task.id}`
       );
-      //console.log('Stored hours worked:', storedHoursWorked); // Log the stored value
+      //console.log('Stored hours worked:', storedHoursWorked); 
       if (storedHoursWorked !== null) {
         setHoursWorked(storedHoursWorked);
-        //console.log('Hours worked state after set:', hoursWorked); // Log the state after setting
+        //console.log('Hours worked state after set:', hoursWorked); 
       }
     } catch (error) {
       console.error("Error loading hours worked from AsyncStorage:", error);

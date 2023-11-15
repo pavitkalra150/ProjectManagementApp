@@ -124,11 +124,7 @@ const TaskScreen = ({ route, navigation }) => {
   const handleDelete = async (taskId) => {
     try {
       const updatedTasks = projectTasks.filter((task) => task.id !== taskId);
-
-      // Update the state with the updated tasks
       setProjectTasks(updatedTasks);
-
-      // Save the updated tasks to AsyncStorage
       await saveTasksToStorage(updatedTasks);
       //console.log("Task deleted successfully.");
     } catch (error) {
@@ -148,7 +144,7 @@ const TaskScreen = ({ route, navigation }) => {
 
   const handleAddTask = async () => {
     try {
-      const lastTask = projectTasks[projectTasks.length - 1]; // Assuming the last task is the previously added task
+      const lastTask = projectTasks[projectTasks.length - 1]; 
     
       const newTask = {
         projectId: projectId,
@@ -157,11 +153,10 @@ const TaskScreen = ({ route, navigation }) => {
         assignedTo: assignedTo,
         dueDate: dueDate,
         status: "Open",
-        dependencyId: lastTask ? lastTask.id : null, // Set dependency to the last task's ID
+        dependencyId: lastTask ? lastTask.id : null, 
         hoursWorked: 0,
       };
     
-      // Add the new task and wait for it to complete
       await addTask(
         projectId,
         taskName,
@@ -171,22 +166,17 @@ const TaskScreen = ({ route, navigation }) => {
         "Open",
         lastTask ? lastTask.id : null
       );
-    
-      // Save the new task to storage
       saveTasksToStorage([...projectTasks, newTask]);
       console.log("Adding Task", newTask);
-    
-      // Update the state with the updated tasks
+
       const updatedTasks = [...projectTasks, newTask];
       setProjectTasks(updatedTasks);
     
-      // Reset input fields
       setTaskName("");
       setTaskDescription("");
       setAssignedTo("");
       setDueDate("");
     
-      // Close the modal after resetting fields
       closeAddTaskModal();
     } catch (error) {
       console.error("Error adding task:", error);
@@ -365,7 +355,7 @@ const TaskScreen = ({ route, navigation }) => {
               </Button>
               <Button
                 mode="outlined"
-                onPress={handleCancel} // Close the modal when "Cancel" is pressed
+                onPress={handleCancel} 
                 style={[styles.button, { borderColor: theme.colors.primary }]}
               >
                 Cancel

@@ -7,7 +7,7 @@ import AuthScreen from "./src/screens/AuthScreen";
 import ProjectScreen from "./src/screens/ProjectScreen";
 import TaskScreen from "./src/screens/TaskScreen";
 import TaskDetailsScreen from "./src/screens/TaskDetailsScreen";
-import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons"; // Import your desired icon set
+import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons"; 
 
 const Stack = createStackNavigator();
 const Tab = createStackNavigator();
@@ -50,13 +50,13 @@ function MainNavigator({ route }) {
       <Tab.Screen
        name="Project"
       options={{
-      gestureEnabled: false, // Disable gesture for swiping back
+      gestureEnabled: false, 
       tabBarLabel: "Projects",
       tabBarIcon: ({ color }) => (
         <MaterialCommunityIcons name="home" color={color} size={26} />
       ),
       tabBarStyle: styles.tab,
-      headerShown: false // If you want to hide the header as well
+      headerShown: false 
         }}
       >
         {props => <ProjectScreen {...props} email={email} />}
@@ -85,7 +85,7 @@ const styles = {
     backgroundColor: "#4d8d89",
   },
   tab: {
-    minHeight: 50, // Adjust the height as needed
+    minHeight: 50,
   },
 };
 

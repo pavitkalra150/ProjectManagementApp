@@ -39,13 +39,10 @@ function AuthScreen() {
   }, []);
 
   const handleLogin = async () => {
-    // Validate email
     if (!validateEmail(email)) {
       setEmailError('Invalid email format');
       return;
     }
-
-    // Validate password
     if (!password || password.trim() === '') {
       setPasswordError('Password is required');
       return;
@@ -60,11 +57,9 @@ function AuthScreen() {
       console.log('Login successful');
       navigation.navigate('Main', { email: email});
 
-      // Save email in AsyncStorage if rememberMe is enabled
       if (rememberMe) {
         await AsyncStorage.setItem('rememberedEmail', email);
       } else {
-        // Clear rememberedEmail if rememberMe is not enabled
         await AsyncStorage.removeItem('rememberedEmail');
       }
     } else {
@@ -73,8 +68,6 @@ function AuthScreen() {
       setPasswordError('Invalid email or password');
     }
   };
-
-  // Email validation function
   const validateEmail = (email) => {
     return email.includes('@');
   };
@@ -97,7 +90,6 @@ function AuthScreen() {
                 marginLeft: 20,
               }}
             >
-              {/* <Image source={require('../assets/arrow-left-icon.png')} style={{ width: 20, height: 20 }} /> */}
             </TouchableOpacity>
           </View>
           <View style={{ flexDirection: 'row', justifyContent: 'center' }}>

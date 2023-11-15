@@ -28,8 +28,8 @@ import {
   computeProjectStatus,
   computeProjectCost,
   editProject,
-} from "../data/projectsData"; // Import projects data, addProject, and deleteProject functions
-import { tasks, addTask ,loadTasksFromStorage} from "../data/tasksData"; // Import tasks data and addTask function
+} from "../data/projectsData"; 
+import { tasks, addTask ,loadTasksFromStorage} from "../data/tasksData";
 import { SafeAreaFrameContext } from "react-native-safe-area-context";
 
 const ProjectScreen = ({ navigation, route, email }) => {
@@ -44,12 +44,12 @@ const ProjectScreen = ({ navigation, route, email }) => {
   const modalWidth = width - 32;
   const modalHeight = height * 0.7;
   const getItemWidth = () => {
-    const itemWidth = Dimensions.get('window').width - 32 - 32; // Considering padding
+    const itemWidth = Dimensions.get('window').width - 32 - 32; 
     setItemWidth(itemWidth);
   };
 
   useEffect(() => {
-    getItemWidth(); // Call the function to measure the item width
+    getItemWidth(); 
   }, []);
   useEffect(() => {
     if (route.params && route.params.email) {
@@ -63,9 +63,9 @@ const ProjectScreen = ({ navigation, route, email }) => {
     }
 
     try {
-      await addProject(newProjectName, newProjectDescription, email); // Use the async addProject function
+      await addProject(newProjectName, newProjectDescription, email); 
 
-      const updatedProjects = await loadProjectsFromStorage(email); // Fetch updated projects
+      const updatedProjects = await loadProjectsFromStorage(email); 
 
       if (updatedProjects) {
         setFilteredProjects(updatedProjects);
@@ -88,48 +88,39 @@ const ProjectScreen = ({ navigation, route, email }) => {
   };
   const saveEditedProject = async () => {
     try {
-      await editProject(editingProject.id, editingProject); // Assuming editingProject holds the updated data
-  
-      // Update the project list in the state immediately after saving
+      await editProject(editingProject.id, editingProject); 
       const updatedProjects = filteredProjects.map((project) =>
         project.id === editingProject.id ? editingProject : project
       );
       setFilteredProjects(updatedProjects);
   
-      closeEditProjectModal(); // Close the modal
-      setEditingProject(null); // Reset the editingProject state
+      closeEditProjectModal();
+      setEditingProject(null);
     } catch (error) {
       console.log('Error saving edited project:', error);
-      // Handle error
     }
   };
   
   const closeEditProjectModal = () => {
-    // Logic to close the edit project modal
-    // For example:
-    setAddingProject(false); // Assuming 'addingProject' is a state used to control the visibility of the modal
+    setAddingProject(false);
   };
 
   const handleDelete = async (projectId) => {
     try {
       await deleteProject(projectId);
-      // Remove the deleted project from the state to update the UI
       const updatedProjects = filteredProjects.filter(
         (project) => project.id !== projectId
       );
       setFilteredProjects(updatedProjects);
     } catch (error) {
       console.log('Error deleting project:', error);
-      // Handle error
     }
   };
   const handleSearch = (query) => {
     setSearchQuery(query);
     if (query.length === 0) {
-      // Show all projects if the search query is empty
       retrieveProjects();
     } else {
-      // Filter projects based on the search query
       const filtered = filteredProjects.filter(
         (project) =>
           project.name.toLowerCase().includes(query.toLowerCase()) ||
@@ -139,17 +130,14 @@ const ProjectScreen = ({ navigation, route, email }) => {
     }
   };
   const handleBlur = () => {
-    // Reset filtered projects to show all when search bar loses focus
     if (searchQuery === '') {
       retrieveProjects();
     }
-    // Dismiss the keyboard when search bar loses focus
     Keyboard.dismiss();
   };
   const retrieveProjects = useCallback(async () => {
     try {
       const users = await getUserData();
-      //console.log('Users data:', users);
   
       if (!Array.isArray(users) || users.length === 0) {
         console.error('No user data found or invalid user data format.');
@@ -164,7 +152,7 @@ const ProjectScreen = ({ navigation, route, email }) => {
         return;
       }
   
-      const loggedInUserHourlyRate = loggedInUser.hourlySalary || 0; // Fetch hourlySalary from user data
+      const loggedInUserHourlyRate = loggedInUser.hourlySalary || 0;
       console.log('Logged-in user hourly rate:', loggedInUserHourlyRate);
   
       const loadedProjects = await loadProjectsFromStorage();
@@ -181,8 +169,6 @@ const ProjectScreen = ({ navigation, route, email }) => {
         const projectsWithCost = userProjects.map((project) => {
           const status = computeProjectStatus(project.id, tasks);
           const cost = computeProjectCost(project.id, tasks, loggedInUserHourlyRate);
-          //console.log(loggedInUserHourlyRate); // Use loggedInUserHourlyRate
-          //console.log(tasks);
           return { ...project, status, cost };
         });
   
@@ -344,7 +330,7 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: "#9DB5B2",
-    padding: 16, // Adjust the padding as per your requirement
+    padding: 16,
   },
   container: {
     flex: 1,

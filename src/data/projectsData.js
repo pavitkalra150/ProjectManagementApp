@@ -80,14 +80,13 @@ export async function updateProjectStatus(projectId, tasks) {
       );
 
       if (completedTasks.length === projectTasks.length) {
-        // All tasks are completed for this project
         return "Completed";
       } else {
         return "In Progress";
       }
     }
 
-    return null; // Indicates that the project was not found
+    return null;
   } catch (error) {
     console.error("Error updating project status:", error);
     throw error;
@@ -134,11 +133,11 @@ const loadHoursWorkedForTask = async (taskId) => {
   if (!storedHoursWorked) {
     try {
       const hours = await AsyncStorage.getItem(`hours_worked_${taskId}`);
-      storedHoursWorked = hours || '0'; // Assuming default as '0' if hours not found
+      storedHoursWorked = hours || '0';
       hoursWorkedData[taskId] = storedHoursWorked;
     } catch (error) {
       console.error(`Error loading hours worked for task ${taskId}:`, error);
-      storedHoursWorked = '0'; // Setting default value in case of error
+      storedHoursWorked = '0';
     }
   }
   return parseFloat(storedHoursWorked);
