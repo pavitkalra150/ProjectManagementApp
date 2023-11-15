@@ -21,7 +21,7 @@ function HomeScreen() {
     <SafeAreaView style={{ flex: 1, backgroundColor: themeColors.bg }}>
       <View style={{ flex: 1, justifyContent: 'space-around', marginVertical: 4 }}>
         <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 32, textAlign: 'center' }}>
-          {isLoggedIn ? 'Welcome Back!' : "Let's Get Started!"}
+          {isLoggedIn ? 'Project Management Application' : "Let's Get Started!"}
         </Text>
         <View style={{ flexDirection: 'row', justifyContent: 'center' }}>
           <Image

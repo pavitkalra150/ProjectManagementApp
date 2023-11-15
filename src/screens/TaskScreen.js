@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -15,23 +15,100 @@ import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityI
 import { SafeAreaView } from "react-native-safe-area-context";
 import { TextInput, Button, useTheme } from "react-native-paper";
 import DateTimePickerModal from "react-native-modal-datetime-picker";
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { tasks, addTask , loadTasksFromStorage, saveTasksToStorage} from "../data/tasksData";
-import { projects } from "../data/projectsData";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import {
+  tasks,
+  addTask,
+  loadTasksFromStorage,
+  saveTasksToStorage,
+} from "../data/tasksData";
+import { projects, loadProjectsFromStorage } from "../data/projectsData";
 
 const TaskScreen = ({ route, navigation }) => {
   const { projectId } = route.params;
-  const project = projects.find((project) => project.id === projectId);
-  const projectTasks = tasks.filter((task) => task.projectId === projectId);
+  const [project, setProject] = useState(null);
+  const [projectTasks, setProjectTasks] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const projects = await loadProjectsFromStorage();
+        if (projects && projects.length > 0) {
+          const foundProject = projects.find(
+            (project) => project.id === projectId
+          );
+          if (foundProject) {
+            setProject(foundProject);
+            const loadedTasks = await loadTasksFromStorage();
+            const filteredTasks = loadedTasks.filter(
+              (task) => task.projectId === projectId
+            );
+            setProjectTasks(filteredTasks);
+          } else {
+            console.log("Project not found.");
+          }
+        } else {
+          console.log("Projects not found or empty.");
+        }
+      } catch (error) {
+        console.log("Error fetching projects:", error);
+      }
+    };
+
+    fetchData();
+  }, [projectId]);
   const groupedTasks = groupTasksByStatus(projectTasks);
-  
+
   const [selectedStatus, setSelectedStatus] = useState("All");
   const [isAddingTask, setAddingTask] = useState(false);
   const [taskName, setTaskName] = useState("");
   const [taskDescription, setTaskDescription] = useState("");
   const [dueDate, setDueDate] = useState("");
   const [assignedTo, setAssignedTo] = useState("");
+  const [editingTask, setEditingTask] = useState(null);
+  const handleSearch = (query) => {
+    setSearchQuery(query);
 
+    const filtered =
+      query.length === 0
+        ? groupedTasks[selectedStatus] || []
+        : projectTasks.filter(
+            (task) =>
+              task.name.toLowerCase().includes(query.toLowerCase()) ||
+              task.description.toLowerCase().includes(query.toLowerCase())
+          );
+
+    setProjectTasks(
+      filtered.length > 0 ? filtered : groupedTasks[selectedStatus] || []
+    );
+  };
+  const handleEdit = (task) => {
+    setEditingTask(task);
+    setAddingTask(true);
+    setTaskName(task.name);
+    setTaskDescription(task.description);
+    setAssignedTo(task.assignedTo);
+    setDueDate(task.dueDate);
+  };
+
+  const saveEditedTask = () => {
+    const updatedTasks = projectTasks.map((task) =>
+      task.id === editingTask.id
+        ? {
+            ...task,
+            name: taskName,
+            description: taskDescription,
+            assignedTo: assignedTo,
+            dueDate: dueDate,
+          }
+        : task
+    );
+
+    setProjectTasks(updatedTasks);
+    saveTasksToStorage(updatedTasks);
+    closeAddTaskModal();
+    setEditingTask(null);
+  };
   const filteredTasks =
     selectedStatus === "All"
       ? projectTasks
@@ -44,7 +121,7 @@ const TaskScreen = ({ route, navigation }) => {
       value: status,
     })),
   ];
-  
+
   const dismissKeyboard = () => {
     Keyboard.dismiss();
   };
@@ -56,38 +133,53 @@ const TaskScreen = ({ route, navigation }) => {
     setAddingTask(false);
   };
 
-  const handleAddTask = () => {
-    const lastTask = projectTasks[projectTasks.length - 1]; // Assuming the last task is the previously added task
-  
-    const newTask = {
-      projectId: projectId,
-      name: taskName,
-      description: taskDescription,
-      assignedTo: assignedTo,
-      dueDate: dueDate,
-      status: "Open",
-      dependencyId: lastTask ? lastTask.id : null, // Set dependency to the last task's ID
-      hoursWorked: 0,
-    };
-  
-    addTask(
-      projectId,
-      taskName,
-      taskDescription,
-      assignedTo,
-      dueDate,
-      "Open",
-      lastTask ? lastTask.id : null
-    );
-  
-    saveTasksToStorage([...tasks, newTask]);
-    console.log("Adding Task", newTask);
-    setTaskName("");
-    setTaskDescription("");
-    setAssignedTo("");
-    setDueDate("");
-    closeAddTaskModal();
+  const handleAddTask = async () => {
+    try {
+      const lastTask = projectTasks[projectTasks.length - 1]; // Assuming the last task is the previously added task
+    
+      const newTask = {
+        projectId: projectId,
+        name: taskName,
+        description: taskDescription,
+        assignedTo: assignedTo,
+        dueDate: dueDate,
+        status: "Open",
+        dependencyId: lastTask ? lastTask.id : null, // Set dependency to the last task's ID
+        hoursWorked: 0,
+      };
+    
+      // Add the new task and wait for it to complete
+      await addTask(
+        projectId,
+        taskName,
+        taskDescription,
+        assignedTo,
+        dueDate,
+        "Open",
+        lastTask ? lastTask.id : null
+      );
+    
+      // Save the new task to storage
+      saveTasksToStorage([...projectTasks, newTask]);
+      console.log("Adding Task", newTask);
+    
+      // Update the state with the updated tasks
+      const updatedTasks = [...projectTasks, newTask];
+      setProjectTasks(updatedTasks);
+    
+      // Reset input fields
+      setTaskName("");
+      setTaskDescription("");
+      setAssignedTo("");
+      setDueDate("");
+    
+      // Close the modal after resetting fields
+      closeAddTaskModal();
+    } catch (error) {
+      console.error("Error adding task:", error);
+    }
   };
+  
 
   const theme = useTheme();
 
@@ -106,61 +198,86 @@ const TaskScreen = ({ route, navigation }) => {
     setDueDate(formattedDate);
     closeDueDatePicker();
   };
-
+  const handleCancel = () => {
+    setAddingTask(false);
+    setEditingTask(null);
+    setTaskName("");
+    setTaskDescription("");
+    setAssignedTo("");
+    setDueDate("");
+  };
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.headerContainer}>
-        <Text style={styles.header}>
-          Tasks for {project ? project.name : ""}
-        </Text>
-      </View>
-      <View>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.buttonContainer}
-        >
-          {statusButtons.map((item) => (
-            <TouchableOpacity
-              key={item.value}
-              style={[
-                styles.filterButton,
-                {
-                  backgroundColor:
-                    item.value === selectedStatus ? "#4d8d89" : "#eeeeee",
-                },
-              ]}
-              onPress={() => setSelectedStatus(item.value)}
-            >
-              <Text style={styles.buttonText}>{item.label}</Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      </View>
-
-      <FlatList
-        contentContainerStyle={styles.contentContainer}
-        data={filteredTasks}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            onPress={() => navigation.navigate("TaskDetails", { task: item })}
-            style={styles.taskItem}
+    <TouchableWithoutFeedback onPress={dismissKeyboard}>
+      <SafeAreaView style={styles.container}>
+        <View style={styles.headerContainer}>
+          <Text style={styles.header}>
+            Tasks for {project ? project.name : ""}
+          </Text>
+        </View>
+        <View>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.buttonContainer}
           >
-            <View style={styles.taskDetails}>
-              <Text style={styles.taskName}>{item.name}</Text>
-              <Text style={styles.taskDescription}>{item.description}</Text>
-            </View>
-          </TouchableOpacity>
-        )}
-      />
-      <TouchableOpacity style={styles.addTaskButton} onPress={openAddTaskModal}>
-        <Text style={styles.addTaskButtonText}>Add Task</Text>
-      </TouchableOpacity>
-
-      <TouchableWithoutFeedback onPress={dismissKeyboard}>
+            {statusButtons.map((item) => (
+              <TouchableOpacity
+                key={item.value}
+                style={[
+                  styles.filterButton,
+                  {
+                    backgroundColor:
+                      item.value === selectedStatus ? "#4d8d89" : "#eeeeee",
+                  },
+                ]}
+                onPress={() => setSelectedStatus(item.value)}
+              >
+                <Text style={styles.buttonText}>{item.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+        <TextInput
+          label="Search by name or description"
+          value={searchQuery}
+          onChangeText={handleSearch}
+          style={styles.searchInput}
+          theme={{ colors: { primary: "#9DB5B2" } }}
+        />
+        <FlatList
+          contentContainerStyle={styles.contentContainer}
+          data={filteredTasks}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              onPress={() => navigation.navigate("TaskDetails", { task: item })}
+              style={styles.taskItem}
+            >
+              <View style={styles.taskRow}>
+                <View style={styles.taskDetails}>
+                  <Text style={styles.taskName}>{item.name}</Text>
+                  <Text style={styles.taskDescription}>{item.description}</Text>
+                </View>
+                <View style={styles.editDeleteButtons}>
+                  <Button icon="pencil" onPress={() => handleEdit(item)}>
+                    Edit
+                  </Button>
+                  <Button icon="delete" onPress={() => handleDelete(item.id)}>
+                    Delete
+                  </Button>
+                </View>
+              </View>
+            </TouchableOpacity>
+          )}
+        />
+        <TouchableOpacity
+          style={styles.addTaskButton}
+          onPress={openAddTaskModal}
+        >
+          <Text style={styles.addTaskButtonText}>Add Task</Text>
+        </TouchableOpacity>
         <Modal
-          visible={isAddingTask}
+          visible={isAddingTask || editingTask !== null}
           animationType="slide"
           transparent={true}
           onRequestClose={closeAddTaskModal}
@@ -225,17 +342,17 @@ const TaskScreen = ({ route, navigation }) => {
               />
               <Button
                 mode="contained"
-                onPress={handleAddTask}
+                onPress={editingTask ? saveEditedTask : handleAddTask}
                 style={[
                   styles.button,
                   { backgroundColor: theme.colors.primary },
                 ]}
               >
-                Add Task
+                {editingTask ? "Save Task" : "Add Task"}
               </Button>
               <Button
                 mode="outlined"
-                onPress={closeAddTaskModal}
+                onPress={handleCancel} // Close the modal when "Cancel" is pressed
                 style={[styles.button, { borderColor: theme.colors.primary }]}
               >
                 Cancel
@@ -243,8 +360,8 @@ const TaskScreen = ({ route, navigation }) => {
             </View>
           </View>
         </Modal>
-      </TouchableWithoutFeedback>
-    </SafeAreaView>
+      </SafeAreaView>
+    </TouchableWithoutFeedback>
   );
 };
 
@@ -366,6 +483,48 @@ const styles = StyleSheet.create({
   datePickerInput: {
     justifyContent: "center",
     padding: 10,
+  },
+  searchInput: {
+    marginBottom: 10,
+    backgroundColor: "white",
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    elevation: 2,
+    shadowColor: "black",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+  },
+  taskRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: "#eeeeee",
+    borderRadius: 8,
+    // padding: 16,
+    // margin: 8,
+    shadowColor: "rgba(0, 0, 0, 0.1)",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  taskDetails: {},
+  taskName: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 4,
+    color: "#333",
+  },
+  taskDescription: {
+    marginTop: 4,
+    fontSize: 14,
+    color: "#666",
+  },
+  editDeleteButtons: {
+    //flexDirection: 'row',
+    alignItems: "center",
   },
 });
 

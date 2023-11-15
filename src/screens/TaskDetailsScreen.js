@@ -10,6 +10,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
+import { useNavigation } from '@react-navigation/native';
 import { Card, Title, Paragraph } from "react-native-paper";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
@@ -17,17 +18,31 @@ import {
   updateProjectStatus,
 } from "../data/projectsData";
 import {
-  tasks,
   loadTasksFromStorage,
   saveTasksToStorage,
 } from "../data/tasksData";
 
 const TaskDetailsScreen = ({ route }) => {
+  const navigation = useNavigation();
   const { task } = route.params;
-  const projectName = fetchProjectNameById(task.projectId);
+  const [projectName, setProjectName] = useState("");
   const [taskStatus, setTaskStatus] = useState(task.status);
   const [showStatusOptions, setShowStatusOptions] = useState(false);
-  const [hoursWorked, setHoursWorked] = useState(task.hoursWorked.toString()); // New state for hours worked
+  const [hoursWorked, setHoursWorked] = useState(task.hoursWorked.toString());
+
+  useEffect(() => {
+    const fetchProjectName = async () => {
+      try {
+        const name = await fetchProjectNameById(task.projectId);
+        setProjectName(name);
+      } catch (error) {
+        console.error("Error fetching project name:", error);
+        setProjectName("Project Not Found");
+      }
+    };
+
+    fetchProjectName();
+  }, [task.projectId]);
 
   const handleStatusChange = async (status) => {
     const storedTasks = await loadTasksFromStorage();
@@ -43,7 +58,7 @@ const TaskDetailsScreen = ({ route }) => {
       );
       return;
     }
-
+    
     setTaskStatus(status);
     setShowStatusOptions(false);
 
@@ -62,15 +77,29 @@ const TaskDetailsScreen = ({ route }) => {
       updateProjectStatus(task.projectId, updatedTasks);
     }
   };
-
+  useEffect(() => {
+    if (taskStatus !== task.status || hoursWorked !== task.hoursWorked.toString()) {
+      navigation.setParams({
+        updatedStatus: taskStatus,
+        updatedHoursWorked: hoursWorked,
+      });
+    }
+  }, [taskStatus, hoursWorked, task.status, task.hoursWorked]);
+  useEffect(() => {
+    //console.log('Hours worked state after set1:', hoursWorked);
+  }, [hoursWorked]);
   const hasPendingDependencies = (currentTask, tasks) => {
-    const dependentTasks = tasks.filter(
-      (t) => t.id !== currentTask.id && t.dependencyId === currentTask.id
+    console.log("Current Task ID:", currentTask.id);
+    const dependentTasks = tasks.filter((t) => t.dependencyId === currentTask.id);
+  
+    console.log("Dependent Tasks:", dependentTasks);
+  
+    const pendingDependencies = dependentTasks.some(
+      (dependentTask) => dependentTask.status !== "Completed"
     );
-
-    return dependentTasks.some((t) => t.status !== "Done");
+  
+    return pendingDependencies;
   };
-
   const loadStatusFromAsyncStorage = async () => {
     try {
       const storedStatus = await AsyncStorage.getItem(`task_status_${task.id}`);
@@ -81,18 +110,22 @@ const TaskDetailsScreen = ({ route }) => {
       console.error("Error loading status from AsyncStorage:", error);
     }
   };
+
   const loadHoursWorkedFromAsyncStorage = async () => {
     try {
       const storedHoursWorked = await AsyncStorage.getItem(
         `hours_worked_${task.id}`
       );
+      //console.log('Stored hours worked:', storedHoursWorked); // Log the stored value
       if (storedHoursWorked !== null) {
         setHoursWorked(storedHoursWorked);
+        //console.log('Hours worked state after set:', hoursWorked); // Log the state after setting
       }
     } catch (error) {
       console.error("Error loading hours worked from AsyncStorage:", error);
     }
   };
+
   useEffect(() => {
     loadStatusFromAsyncStorage();
     loadHoursWorkedFromAsyncStorage();
@@ -105,7 +138,7 @@ const TaskDetailsScreen = ({ route }) => {
   const saveStatusToAsyncStorage = async () => {
     try {
       await AsyncStorage.setItem(`task_status_${task.id}`, taskStatus);
-      await AsyncStorage.setItem(`hours_worked_${task.id}`, hoursWorked); // Save hoursWorked to AsyncStorage
+      await AsyncStorage.setItem(`hours_worked_${task.id}`, hoursWorked);
     } catch (error) {
       console.error("Error saving status to AsyncStorage:", error);
     }
@@ -151,7 +184,7 @@ const TaskDetailsScreen = ({ route }) => {
               <TextInput
                 value={hoursWorked}
                 onChangeText={(value) => setHoursWorked(value)}
-                keyboardType="numeric" // Enable numeric keyboard
+                keyboardType="numeric"
                 style={[
                   styles.value,
                   {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -7,8 +7,11 @@ import {
   TouchableOpacity,
   Modal,
   Dimensions,
+  SafeAreaView,
+  Keyboard,
+  TouchableWithoutFeedback,
 } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createMaterialBottomTabNavigator } from "@react-navigation/material-bottom-tabs";
 import {
@@ -24,53 +27,181 @@ import {
   loadProjectsFromStorage,
   computeProjectStatus,
   computeProjectCost,
+  editProject,
 } from "../data/projectsData"; // Import projects data, addProject, and deleteProject functions
-import { tasks, addTask } from "../data/tasksData"; // Import tasks data and addTask function
+import { tasks, addTask ,loadTasksFromStorage} from "../data/tasksData"; // Import tasks data and addTask function
+import { SafeAreaFrameContext } from "react-native-safe-area-context";
 
 const ProjectScreen = ({ navigation, route, email }) => {
   const [newProjectName, setNewProjectName] = useState("");
   const [newProjectDescription, setNewProjectDescription] = useState("");
   const [isAddingProject, setAddingProject] = useState(false);
-
-  const [filteredProjects, setFilteredProjects] = useState([]); // State to hold filtered projects
-
+  const [filteredProjects, setFilteredProjects] = useState([]);
+  const [itemWidth, setItemWidth] = useState(0);
+  const [editingProject, setEditingProject] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
   const { width, height } = Dimensions.get("window");
   const modalWidth = width - 32;
   const modalHeight = height * 0.7;
+  const getItemWidth = () => {
+    const itemWidth = Dimensions.get('window').width - 32 - 32; // Considering padding
+    setItemWidth(itemWidth);
+  };
 
+  useEffect(() => {
+    getItemWidth(); // Call the function to measure the item width
+  }, []);
   useEffect(() => {
     if (route.params && route.params.email) {
       setEmail(route.params.email);
     }
   }, [route.params]);
+  const addNewProject = async () => {
+    if (newProjectName.trim() === "") {
+      alert("Project name cannot be empty");
+      return;
+    }
 
-  useEffect(() => {
-    if (email) {
-      const retrieveProjects = async () => {
-        const loadedProjects = await loadProjectsFromStorage(email);
-        if (loadedProjects) {
-          try {
-            const user = await getUserData(); // Assuming this function returns a Promise
-            const projectsWithCost = loadedProjects.map((project) => {
-              const status = computeProjectStatus(project.id, tasks);
-              const userHourlyRate = user.find((u) => u.email === project.createdBy);
-              const hourlyRate = userHourlyRate?.hourlySalary || 0;
-              const cost = computeProjectCost(project.id, tasks, hourlyRate);
-              return { ...project, status, cost };
-            });
+    try {
+      await addProject(newProjectName, newProjectDescription, email); // Use the async addProject function
 
-            setFilteredProjects(projectsWithCost);
-          } catch (error) {
-            console.log("Error calculating project cost:", error);
-          }
-        } else {
-          console.log("Error loading projects or no projects found.");
-        }
-      };
+      const updatedProjects = await loadProjectsFromStorage(email); // Fetch updated projects
+
+      if (updatedProjects) {
+        setFilteredProjects(updatedProjects);
+      } else {
+        console.log("Error loading projects.");
+      }
+
+      setNewProjectName("");
+      setNewProjectDescription("");
+      closeAddProjectModal();
+
+      navigation.navigate("Projects", { createdBy: email });
+    } catch (error) {
+      console.log("Error adding the project:", error);
+    }
+  };
+  const handleEdit = (project) => {
+    setEditingProject(project);
+    setAddingProject(true);
+  };
+  const saveEditedProject = async () => {
+    try {
+      await editProject(editingProject.id, editingProject); // Assuming editingProject holds the updated data
+  
+      // Update the project list in the state immediately after saving
+      const updatedProjects = filteredProjects.map((project) =>
+        project.id === editingProject.id ? editingProject : project
+      );
+      setFilteredProjects(updatedProjects);
+  
+      closeEditProjectModal(); // Close the modal
+      setEditingProject(null); // Reset the editingProject state
+    } catch (error) {
+      console.log('Error saving edited project:', error);
+      // Handle error
+    }
+  };
+  
+  const closeEditProjectModal = () => {
+    // Logic to close the edit project modal
+    // For example:
+    setAddingProject(false); // Assuming 'addingProject' is a state used to control the visibility of the modal
+  };
+
+  const handleDelete = async (projectId) => {
+    try {
+      await deleteProject(projectId);
+      // Remove the deleted project from the state to update the UI
+      const updatedProjects = filteredProjects.filter(
+        (project) => project.id !== projectId
+      );
+      setFilteredProjects(updatedProjects);
+    } catch (error) {
+      console.log('Error deleting project:', error);
+      // Handle error
+    }
+  };
+  const handleSearch = (query) => {
+    setSearchQuery(query);
+    if (query.length === 0) {
+      // Show all projects if the search query is empty
+      retrieveProjects();
+    } else {
+      // Filter projects based on the search query
+      const filtered = filteredProjects.filter(
+        (project) =>
+          project.name.toLowerCase().includes(query.toLowerCase()) ||
+          project.description.toLowerCase().includes(query.toLowerCase())
+      );
+      setFilteredProjects(filtered);
+    }
+  };
+  const handleBlur = () => {
+    // Reset filtered projects to show all when search bar loses focus
+    if (searchQuery === '') {
       retrieveProjects();
     }
-  }, [email, tasks]);
+    // Dismiss the keyboard when search bar loses focus
+    Keyboard.dismiss();
+  };
+  const retrieveProjects = useCallback(async () => {
+    try {
+      const users = await getUserData();
+      //console.log('Users data:', users);
+  
+      if (!Array.isArray(users) || users.length === 0) {
+        console.error('No user data found or invalid user data format.');
+        return;
+      }
+  
+      const loggedInUser = users.find(user => user.email === email);
+      console.log('Logged-in user:', loggedInUser);
+  
+      if (!loggedInUser) {
+        console.error('Logged-in user not found.');
+        return;
+      }
+  
+      const loggedInUserHourlyRate = loggedInUser.hourlySalary || 0; // Fetch hourlySalary from user data
+      console.log('Logged-in user hourly rate:', loggedInUserHourlyRate);
+  
+      const loadedProjects = await loadProjectsFromStorage();
+  
+      if (!Array.isArray(loadedProjects)) {
+        console.error('Projects data is not an array or undefined.');
+        return;
+      }
+  
+      const userProjects = loadedProjects.filter((project) => project.createdBy === loggedInUser.email);
+  
+      if (Array.isArray(userProjects) && userProjects.length > 0) {
+        const tasks = await loadTasksFromStorage();
+        const projectsWithCost = userProjects.map((project) => {
+          const status = computeProjectStatus(project.id, tasks);
+          const cost = computeProjectCost(project.id, tasks, loggedInUserHourlyRate);
+          //console.log(loggedInUserHourlyRate); // Use loggedInUserHourlyRate
+          //console.log(tasks);
+          return { ...project, status, cost };
+        });
+  
+        setFilteredProjects(projectsWithCost);
+      } else {
+        setFilteredProjects([]);
+        console.log('No projects found for the logged-in user.');
+      }
+    } catch (error) {
+      console.error('Error retrieving user data or projects:', error);
+    }
+  }, [email]);
+  
+  
 
+  useEffect(() => {
+    retrieveProjects();
+  }, [retrieveProjects]);
+  
   const openAddProjectModal = () => {
     setAddingProject(true);
   };
@@ -81,68 +212,55 @@ const ProjectScreen = ({ navigation, route, email }) => {
 
   const renderItem = ({ item }) => {
     return (
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
       <TouchableOpacity
         onPress={() => navigation.navigate("Task", { projectId: item.id })}
         style={styles.projectItem}
       >
+     
         <View style={styles.projectDetails}>
           <Text style={styles.projectName}>{item.name}</Text>
           <Text style={styles.projectDescription}>{item.description}</Text>
           <Text style={styles.projectStatus}>Status: {item.status}</Text>
           <Text style={styles.projectCost}>Cost: ${item.cost}</Text>
         </View>
+        <View style={styles.editDeleteButtons}>
+        <Button icon="pencil" onPress={() => handleEdit(item)}>
+          Edit
+        </Button>
+        <Button icon="delete" onPress={() => handleDelete(item.id)}>
+          Delete
+        </Button>
+      </View>
+      
       </TouchableOpacity>
+      </TouchableWithoutFeedback>
     );
   };
 
-  const addNewProject = async () => {
-    if (newProjectName.trim() === "") {
-      alert("Project name cannot be empty");
-      return;
-    }
-
-    const added = addProject(newProjectName, newProjectDescription, email);
-    if (added) {
-      setNewProjectName("");
-      setNewProjectDescription("");
-      closeAddProjectModal();
-
-      // Fetch the updated projects
-      const updatedProjects = await loadProjectsFromStorage(email);
-
-      if (updatedProjects) {
-        try {
-          const user = await getUserData(); // Assuming this function returns a Promise
-          const projectsWithStatus = updatedProjects.map((project) => {
-            const status = computeProjectStatus(project.id, tasks);
-            return { ...project, status };
-          });
-
-          setFilteredProjects(projectsWithStatus);
-        } catch (error) {
-          console.log("Error fetching user data:", error);
-        }
-      } else {
-        console.log("Error loading projects.");
-      }
-
-      navigation.navigate("Projects", { createdBy: email });
-    } else {
-      console.log("Error adding the project.");
-    }
-  };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.userInfo}>
-        <Text style={styles.greeting}>Hello, {email}</Text>
-        <Text style={styles.projectHeader}>Your Projects:</Text>
-      </View>
+    <SafeAreaView  style={styles.safeArea}>
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+      <View style={styles.container}>
+        <View style={styles.userInfo}>
+          <Text style={styles.greeting}>Hello, {email}</Text>
+          <Text style={styles.projectHeader}>Your Projects:</Text>
+          <TextInput
+            label="Search by name or description"
+            value={searchQuery}
+            onChangeText={handleSearch}
+            onBlur={handleBlur}
+            style={[styles.searchInput, { width: 380, height:50}]}
+            theme={{ colors: { primary: '#9DB5B2' } }}
+          />
+       </View>
 
       <FlatList
         data={filteredProjects}
         keyExtractor={(item) => item.id.toString()}
         renderItem={renderItem}
+        onLayout={getItemWidth}
       />
 
       <Button
@@ -154,56 +272,82 @@ const ProjectScreen = ({ navigation, route, email }) => {
       </Button>
 
       <Modal
-        visible={isAddingProject}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={closeAddProjectModal}
-      >
-        <View style={styles.modalContainer}>
-          <View
-            style={[
-              styles.modalContent,
-              { width: modalWidth, maxHeight: modalHeight },
-            ]}
+      visible={isAddingProject || editingProject !== null}
+      animationType="slide"
+      transparent={true}
+      onRequestClose={() => {
+        setAddingProject(false);
+        setEditingProject(null);
+      }}
+    >
+      <View style={styles.modalContainer}>
+        <View
+          style={[
+            styles.modalContent,
+            { width: modalWidth, maxHeight: modalHeight },
+          ]}
+        >
+          <Text style={styles.modalTitle}>
+            {editingProject ? "Edit Project" : "Add Project"}
+          </Text>
+          <TextInput
+            label="Project Name"
+            value={editingProject ? editingProject.name : newProjectName}
+            onChangeText={editingProject
+              ? (value) =>
+                  setEditingProject({ ...editingProject, name: value })
+              : setNewProjectName}
+            style={styles.input}
+          />
+          <TextInput
+            label="Project Description"
+            value={
+              editingProject
+                ? editingProject.description
+                : newProjectDescription
+            }
+            onChangeText={editingProject
+              ? (value) =>
+                  setEditingProject({ ...editingProject, description: value })
+              : setNewProjectDescription}
+            style={styles.input}
+          />
+          <Button
+            mode="contained"
+            onPress={editingProject ? saveEditedProject : addNewProject}
+            style={styles.button}
           >
-            <Text style={styles.modalTitle}>Add Project</Text>
-            <TextInput
-              label="Project Name"
-              value={newProjectName}
-              onChangeText={setNewProjectName}
-              style={styles.input}
-            />
-            <TextInput
-              label="Project Description"
-              value={newProjectDescription}
-              onChangeText={setNewProjectDescription}
-              style={styles.input}
-            />
-            <Button
-              mode="contained"
-              onPress={addNewProject}
-              style={styles.button}
-            >
-              Add Project
-            </Button>
-            <Button
-              mode="outlined"
-              onPress={closeAddProjectModal}
-              style={styles.button}
-            >
-              Cancel
-            </Button>
-          </View>
+            {editingProject ? "Save" : "Add Project"}
+          </Button>
+          <Button
+            mode="outlined"
+            onPress={() => {
+              setAddingProject(false);
+              setEditingProject(null);
+              setNewProjectName("");
+              setNewProjectDescription("");
+            }}
+            style={styles.button}
+          >
+            Cancel
+          </Button>
         </View>
-      </Modal>
-    </View>
+      </View>
+    </Modal>
+      </View>
+      </TouchableWithoutFeedback>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
     backgroundColor: "#9DB5B2",
+    padding: 16, // Adjust the padding as per your requirement
+  },
+  container: {
+    flex: 1,
     padding: 16,
   },
   userInfo: {
@@ -282,23 +426,22 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginBottom: 16,
   },
-  swipeItemLeft: {
-    flex: 1,
-    backgroundColor: "blue",
-    justifyContent: "center",
-    paddingLeft: 20,
-  },
-  swipeItemRight: {
-    flex: 1,
-    backgroundColor: "red",
-    justifyContent: "center",
-    paddingLeft: 20,
-    flexDirection: "row",
-  },
   projectCost: {
     fontSize: 14,
     fontWeight: "bold",
     color: "green",
+  },
+  searchInput: {
+    marginBottom: 10,
+    backgroundColor: 'white',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    elevation: 2,
+    shadowColor: 'black',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
   },
 });
 

@@ -28,7 +28,9 @@ function App() {
         >
           {props => <MainNavigator {...props} />}
         </Stack.Screen>
-        <Stack.Screen name="TaskDetails" component={TaskDetailsScreen} />
+        <Stack.Screen name="TaskDetails" component={TaskDetailsScreen} 
+          
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );
@@ -46,13 +48,15 @@ function MainNavigator({ route }) {
       screenOptions={{ headerShown: false }}
     >
       <Tab.Screen
-        name="Project"
-        options={{
-          tabBarLabel: "Projects",
-          tabBarIcon: ({ color }) => (
-            <MaterialCommunityIcons name="home" color={color} size={26} />
-          ),
-          tabBarStyle: styles.tab,
+       name="Project"
+      options={{
+      gestureEnabled: false, // Disable gesture for swiping back
+      tabBarLabel: "Projects",
+      tabBarIcon: ({ color }) => (
+        <MaterialCommunityIcons name="home" color={color} size={26} />
+      ),
+      tabBarStyle: styles.tab,
+      headerShown: false // If you want to hide the header as well
         }}
       >
         {props => <ProjectScreen {...props} email={email} />}

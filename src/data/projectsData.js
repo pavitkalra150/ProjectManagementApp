@@ -1,52 +1,12 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getUserData } from '../data/UserDataManager'; // Import the user data file
-
-
-export const projects = [
-  {
-    id: 1,
-    name: "Project 1",
-    description: "Description of Project 1",
-    createdBy: "user1@example.com",
-  },
-  {
-    id: 2,
-    name: "Project 2",
-    description: "Description of Project 2",
-    createdBy: "user2@example.com",
-  },
-  {
-    id: 3,
-    name: "Project 3",
-    description: "Description of Project 3",
-    createdBy: "user1@example.com",
-  },
-  {
-    id: 4,
-    name: "Project 4",
-    description: "Description of Project 4",
-    createdBy: "user2@example.com",
-  },
-  // Add more projects here
-];
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 function getRandomId() {
   const randomNumber = Math.random().toString().substr(2);
   const timestamp = new Date().getTime().toString();
   return timestamp + randomNumber;
 }
-export function computeProjectStatus(projectId, tasks) {
-  const projectTasks = tasks.filter((task) => task.projectId === projectId);
-  const completedTasks = projectTasks.filter((task) => task.status === 'Done');
 
-  if (completedTasks.length === projectTasks.length) {
-    return 'Completed';
-  }
-
-  return 'In Progress';
-}
-
-export function addProject(newProjectName, newProjectDescription, createdBy) {
+export async function addProject(newProjectName, newProjectDescription, createdBy) {
   const newProject = {
     id: getRandomId(),
     name: newProjectName,
@@ -54,67 +14,160 @@ export function addProject(newProjectName, newProjectDescription, createdBy) {
     createdBy: createdBy,
     status: "Open",
   };
-  projects.push(newProject);
 
-  saveProjectsToStorage(projects);
-  return projects; // Return the updated projects array
+  try {
+    const storedProjects = await loadProjectsFromStorage();
+    const updatedProjects = storedProjects ? [...storedProjects, newProject] : [newProject];
+    await saveProjectsToStorage(updatedProjects);
+    return true;
+  } catch (error) {
+    console.log('Error adding project:', error);
+    throw error;
+  }
 }
-export function filterProjectsByUser(email) {
-  return projects.filter((project) => project.createdBy === email);
+
+export async function filterProjectsByUser(email) {
+  try {
+    const storedProjects = await loadProjectsFromStorage();
+    return storedProjects ? storedProjects.filter((project) => project.createdBy === email) : [];
+  } catch (error) {
+    console.log('Error filtering projects:', error);
+    throw error;
+  }
 }
-export async function loadProjectsFromStorage(userEmail) {
+
+export async function loadProjectsFromStorage() {
   try {
     const storedProjects = await AsyncStorage.getItem('projects');
-    if (storedProjects !== null) {
-      const parsedProjects = JSON.parse(storedProjects);
-      console.log('All projects:', parsedProjects); // Check what's being retrieved from storage
-      const filteredProjects = parsedProjects.filter((project) => project.createdBy === userEmail);
-      console.log('Filtered projects:', filteredProjects); // Verify the projects after filtering
-      return filteredProjects;
-    }
+    return storedProjects ? JSON.parse(storedProjects) : [];
   } catch (error) {
     console.log('Error loading projects:', error);
+    throw error;
   }
-  return []; // Return an empty array or handle appropriately if there's an issue loading from AsyncStorage
 }
-export function fetchProjectNameById(projectId) {
-  const project = projects.find((project) => project.id === projectId);
-  return project ? project.name : 'Project Not Found';
-}
-export function saveProjectsToStorage(projects) {
+
+export async function fetchProjectNameById(projectId) {
   try {
-    AsyncStorage.setItem('projects', JSON.stringify(projects));
+    const storedProjects = await AsyncStorage.getItem('projects');
+    const parsedProjects = storedProjects ? JSON.parse(storedProjects) : [];
+    
+    const project = parsedProjects.find((proj) => proj.id === projectId);
+    return project ? project.name : "Project Not Found";
   } catch (error) {
-    console.log('Error saving projects:', error);
+    console.log('Error fetching project name:', error);
+    throw error;
   }
 }
-export const updateProjectStatus = (projectId, tasks) => {
-  const projectToUpdate = projects.find((project) => project.id === projectId);
 
-  if (projectToUpdate) {
-    const projectTasks = tasks.filter((task) => task.projectId === projectId);
-    const completedTasks = projectTasks.filter((task) => task.status === 'Done');
+export async function saveProjectsToStorage(projects) {
+  try {
+    await AsyncStorage.setItem("projects", JSON.stringify(projects));
+  } catch (error) {
+    console.log("Error saving projects:", error);
+    throw error;
+  }
+}
+export const updateProjectStatus = async (projectId, tasks) => {
+  try {
+    const storedProjects = await loadProjectsFromStorage();
+    const projectToUpdate = storedProjects.find((project) => project.id === projectId);
 
-    if (completedTasks.length === projectTasks.length) {
-      // All tasks are completed for this project
-      return 'Completed';
-    } else {
-      return 'In Progress';
+    if (projectToUpdate) {
+      const projectTasks = tasks.filter((task) => task.projectId === projectId);
+      const completedTasks = projectTasks.filter(
+        (task) => task.status === "Completed"
+      );
+
+      if (completedTasks.length === projectTasks.length) {
+        // All tasks are completed for this project
+        return "Completed";
+      } else {
+        return "In Progress";
+      }
     }
+
+    return null; // Indicates that the project was not found
+  } catch (error) {
+    console.error("Error updating project status:", error);
+    throw error;
+  }
+};
+
+
+
+export function computeProjectStatus(projectId, tasks) {
+  const projectTasks = tasks.filter((task) => task.projectId === projectId);
+
+  if (projectTasks.length === 0) {
+    return "No tasks";
   }
 
-  return null; // Indicates that the project was not found
-};
+  const allTasksClosed = projectTasks.every((task) => task.status === "Closed");
+  const anyTaskInProgress = projectTasks.some((task) => task.status === "In Progress");
+
+  if (allTasksClosed) {
+    return "Completed";
+  } else if (anyTaskInProgress) {
+    return "In Progress";
+  } else {
+    return "Open";
+  }
+}
 
 export function computeProjectCost(projectId, tasks, hourlyRate) {
   const projectTasks = tasks.filter((task) => task.projectId === projectId);
   let totalHoursWorked = 0;
 
   projectTasks.forEach((task) => {
-    totalHoursWorked += parseFloat(task.hoursWorked);
+    const storedHoursWorked = parseFloat(task.hoursWorked) || 0;
+    totalHoursWorked += storedHoursWorked;
   });
 
   const projectCost = totalHoursWorked * hourlyRate;
 
   return projectCost;
+}
+
+const loadHoursWorkedForTask = async (taskId) => {
+  let storedHoursWorked = hoursWorkedData[taskId];
+  if (!storedHoursWorked) {
+    try {
+      const hours = await AsyncStorage.getItem(`hours_worked_${taskId}`);
+      storedHoursWorked = hours || '0'; // Assuming default as '0' if hours not found
+      hoursWorkedData[taskId] = storedHoursWorked;
+    } catch (error) {
+      console.error(`Error loading hours worked for task ${taskId}:`, error);
+      storedHoursWorked = '0'; // Setting default value in case of error
+    }
+  }
+  return parseFloat(storedHoursWorked);
+};
+export async function editProject(projectId, updatedProjectData) {
+  try {
+    const storedProjects = await loadProjectsFromStorage();
+    const updatedProjects = storedProjects.map((project) => {
+      if (project.id === projectId) {
+        return { ...project, ...updatedProjectData };
+      }
+      return project;
+    });
+    await saveProjectsToStorage(updatedProjects);
+    return true;
+  } catch (error) {
+    console.log('Error editing project:', error);
+    throw error;
+  }
+}
+export async function deleteProject(projectId) {
+  try {
+    const storedProjects = await loadProjectsFromStorage();
+    const updatedProjects = storedProjects.filter(
+      (project) => project.id !== projectId
+    );
+    await saveProjectsToStorage(updatedProjects);
+    return true;
+  } catch (error) {
+    console.log('Error deleting project:', error);
+    throw error;
+  }
 }
