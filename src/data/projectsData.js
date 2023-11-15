@@ -67,7 +67,8 @@ export async function saveProjectsToStorage(projects) {
     throw error;
   }
 }
-export const updateProjectStatus = async (projectId, tasks) => {
+
+export async function updateProjectStatus(projectId, tasks) {
   try {
     const storedProjects = await loadProjectsFromStorage();
     const projectToUpdate = storedProjects.find((project) => project.id === projectId);
@@ -91,7 +92,7 @@ export const updateProjectStatus = async (projectId, tasks) => {
     console.error("Error updating project status:", error);
     throw error;
   }
-};
+}
 
 
 

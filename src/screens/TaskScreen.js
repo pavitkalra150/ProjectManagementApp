@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect , useMemo} from "react";
 import {
   View,
   Text,
@@ -121,7 +121,20 @@ const TaskScreen = ({ route, navigation }) => {
       value: status,
     })),
   ];
+  const handleDelete = async (taskId) => {
+    try {
+      const updatedTasks = projectTasks.filter((task) => task.id !== taskId);
 
+      // Update the state with the updated tasks
+      setProjectTasks(updatedTasks);
+
+      // Save the updated tasks to AsyncStorage
+      await saveTasksToStorage(updatedTasks);
+      //console.log("Task deleted successfully.");
+    } catch (error) {
+      console.error("Error deleting task:", error);
+    }
+  };
   const dismissKeyboard = () => {
     Keyboard.dismiss();
   };
@@ -241,7 +254,7 @@ const TaskScreen = ({ route, navigation }) => {
           label="Search by name or description"
           value={searchQuery}
           onChangeText={handleSearch}
-          style={styles.searchInput}
+          style={[styles.searchInput, { width: 380, height:45}]}
           theme={{ colors: { primary: "#9DB5B2" } }}
         />
         <FlatList
@@ -382,7 +395,7 @@ const modalHeight = height * 0.7;
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "white",
+    backgroundColor: "#9DB5B2",
     padding: 16,
     flexGrow: 1,
     flexBasis: "0%",
@@ -393,7 +406,7 @@ const styles = StyleSheet.create({
   header: {
     fontSize: 24,
     fontWeight: "bold",
-    color: "#4d8d89",
+    color: "white",
   },
   contentContainer: {
     marginTop: 8,
@@ -404,7 +417,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#eeeeee",
     borderRadius: 8,
     padding: 16,
-    margin: 8,
+    margin: 6,
     shadowColor: "rgba(0, 0, 0, 0.1)",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,

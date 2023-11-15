@@ -76,3 +76,19 @@ export async function editTask(taskId, updatedTask) {
     console.log("Error editing task:", error);
   }
 }
+
+// Deletes a task from AsyncStorage by taskId
+export async function deleteTask(taskId) {
+  try {
+    let tasks = await loadTasksFromStorage(); // Load existing tasks from AsyncStorage
+
+    // Filter out the task with the provided taskId
+    tasks = tasks.filter((task) => task.id !== taskId);
+
+    // Save the updated tasks array to AsyncStorage
+    await saveTasksToStorage(tasks);
+  } catch (error) {
+    console.log("Error deleting task:", error);
+  }
+}
+

@@ -234,6 +234,7 @@ const TaskDetailsScreen = ({ route }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: "#9DB5B2",
   },
   scrollViewContainer: {
     flexGrow: 1,
