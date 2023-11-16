@@ -7,12 +7,18 @@ import AuthScreen from "./src/screens/AuthScreen";
 import ProjectScreen from "./src/screens/ProjectScreen";
 import TaskScreen from "./src/screens/TaskScreen";
 import TaskDetailsScreen from "./src/screens/TaskDetailsScreen";
-import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons"; 
+import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { tasks } from "./src/data/tasksData";
 
 const Stack = createStackNavigator();
 const Tab = createStackNavigator();
 
 function App() {
+  // React.useEffect(() => {
+  //   AsyncStorage.removeItem("tasks");
+  //   AsyncStorage.setItem("tasks", JSON.stringify(tasks));
+  // }, []);
   return (
     <NavigationContainer>
       <Stack.Navigator>
@@ -22,15 +28,10 @@ function App() {
           options={{ headerShown: false }}
           component={AuthScreen}
         />
-        <Stack.Screen
-          name="Main"
-          options={{ headerShown: false }}
-        >
-          {props => <MainNavigator {...props} />}
+        <Stack.Screen name="Main" options={{ headerShown: false }}>
+          {(props) => <MainNavigator {...props} />}
         </Stack.Screen>
-        <Stack.Screen name="TaskDetails" component={TaskDetailsScreen} 
-          
-        />
+        <Stack.Screen name="TaskDetails" component={TaskDetailsScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
@@ -48,18 +49,18 @@ function MainNavigator({ route }) {
       screenOptions={{ headerShown: false }}
     >
       <Tab.Screen
-       name="Project"
-      options={{
-      gestureEnabled: false, 
-      tabBarLabel: "Projects",
-      tabBarIcon: ({ color }) => (
-        <MaterialCommunityIcons name="home" color={color} size={26} />
-      ),
-      tabBarStyle: styles.tab,
-      headerShown: false 
+        name="Project"
+        options={{
+          gestureEnabled: false,
+          tabBarLabel: "Projects",
+          tabBarIcon: ({ color }) => (
+            <MaterialCommunityIcons name="home" color={color} size={26} />
+          ),
+          tabBarStyle: styles.tab,
+          headerShown: false,
         }}
       >
-        {props => <ProjectScreen {...props} email={email} />}
+        {(props) => <ProjectScreen {...props} email={email} />}
       </Tab.Screen>
       <Tab.Screen
         name="Task"

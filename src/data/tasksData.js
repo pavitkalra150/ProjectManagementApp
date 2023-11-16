@@ -1,5 +1,61 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
+export const tasks = [
+  {
+    id: getRandomId(),
+    projectId: 1,
+    name: 'Testing 1',
+    description: 'Description of Task 1',
+    assignedTo: 'user1@example.com',
+    dueDate: '2023-12-31',
+    hoursWorked: 5,
+    status: "Open",
+  },
+  {
+    id: getRandomId(),
+    projectId: 1,
+    name: 'Testing 2',
+    description: 'Description of Task 2',
+    assignedTo: 'user1@example.com',
+    dueDate: '2023-11-15',
+    hoursWorked: 6,
+    status: "Open",
+  },
+  {
+    id: getRandomId(),
+    projectId: 2,
+    name: 'Testing 3',
+    description: 'Description of Task 3',
+    assignedTo: 'user2@example.com',
+    dueDate: '2023-11-15',
+    hoursWorked: 8,
+    status: "Completed",
+  },
+  {
+    id: getRandomId(),
+    projectId: 2,
+    name: 'Testing 4',
+    description: 'Description of Task 4',
+    assignedTo: 'user2@example.com',
+    dueDate: '2023-11-15',
+    hoursWorked: 10,
+    status: "Completed",
+  },
+  {
+    id: getRandomId(),
+    projectId: 2,
+    name: 'Testing 5',
+    description: 'Description of Task 5',
+    assignedTo: 'user2@example.com',
+    dueDate: '2023-11-15',
+    hoursWorked: 10,
+    status: "Completed",
+  },
+  // Add more tasks here
+];
+
+
+
 function getRandomId() {
   const randomNumber = Math.random().toString().substr(2);
   const timestamp = new Date().getTime().toString();

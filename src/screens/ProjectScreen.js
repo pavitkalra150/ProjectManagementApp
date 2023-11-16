@@ -28,8 +28,8 @@ import {
   computeProjectStatus,
   computeProjectCost,
   editProject,
-} from "../data/projectsData"; 
-import { tasks, addTask ,loadTasksFromStorage} from "../data/tasksData";
+} from "../data/projectsData";
+import { tasks, addTask, loadTasksFromStorage } from "../data/tasksData";
 import { SafeAreaFrameContext } from "react-native-safe-area-context";
 
 const ProjectScreen = ({ navigation, route, email }) => {
@@ -39,17 +39,17 @@ const ProjectScreen = ({ navigation, route, email }) => {
   const [filteredProjects, setFilteredProjects] = useState([]);
   const [itemWidth, setItemWidth] = useState(0);
   const [editingProject, setEditingProject] = useState(null);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const { width, height } = Dimensions.get("window");
   const modalWidth = width - 32;
   const modalHeight = height * 0.7;
   const getItemWidth = () => {
-    const itemWidth = Dimensions.get('window').width - 32 - 32; 
+    const itemWidth = Dimensions.get("window").width - 32 - 32;
     setItemWidth(itemWidth);
   };
 
   useEffect(() => {
-    getItemWidth(); 
+    getItemWidth();
   }, []);
   useEffect(() => {
     if (route.params && route.params.email) {
@@ -63,9 +63,9 @@ const ProjectScreen = ({ navigation, route, email }) => {
     }
 
     try {
-      await addProject(newProjectName, newProjectDescription, email); 
+      await addProject(newProjectName, newProjectDescription, email);
 
-      const updatedProjects = await loadProjectsFromStorage(email); 
+      const updatedProjects = await loadProjectsFromStorage(email);
 
       if (updatedProjects) {
         setFilteredProjects(updatedProjects);
@@ -88,19 +88,19 @@ const ProjectScreen = ({ navigation, route, email }) => {
   };
   const saveEditedProject = async () => {
     try {
-      await editProject(editingProject.id, editingProject); 
+      await editProject(editingProject.id, editingProject);
       const updatedProjects = filteredProjects.map((project) =>
         project.id === editingProject.id ? editingProject : project
       );
       setFilteredProjects(updatedProjects);
-  
+
       closeEditProjectModal();
       setEditingProject(null);
     } catch (error) {
-      console.log('Error saving edited project:', error);
+      console.log("Error saving edited project:", error);
     }
   };
-  
+
   const closeEditProjectModal = () => {
     setAddingProject(false);
   };
@@ -113,7 +113,7 @@ const ProjectScreen = ({ navigation, route, email }) => {
       );
       setFilteredProjects(updatedProjects);
     } catch (error) {
-      console.log('Error deleting project:', error);
+      console.log("Error deleting project:", error);
     }
   };
   const handleSearch = (query) => {
@@ -130,7 +130,7 @@ const ProjectScreen = ({ navigation, route, email }) => {
     }
   };
   const handleBlur = () => {
-    if (searchQuery === '') {
+    if (searchQuery === "") {
       retrieveProjects();
     }
     Keyboard.dismiss();
@@ -138,56 +138,61 @@ const ProjectScreen = ({ navigation, route, email }) => {
   const retrieveProjects = useCallback(async () => {
     try {
       const users = await getUserData();
-  
+
       if (!Array.isArray(users) || users.length === 0) {
-        console.error('No user data found or invalid user data format.');
+        console.error("No user data found or invalid user data format.");
         return;
       }
-  
-      const loggedInUser = users.find(user => user.email === email);
-      console.log('Logged-in user:', loggedInUser);
-  
+
+      const loggedInUser = users.find((user) => user.email === email);
+      console.log("Logged-in user:", loggedInUser);
+
       if (!loggedInUser) {
-        console.error('Logged-in user not found.');
+        console.error("Logged-in user not found.");
         return;
       }
-  
+
       const loggedInUserHourlyRate = loggedInUser.hourlySalary || 0;
-      console.log('Logged-in user hourly rate:', loggedInUserHourlyRate);
-  
+      console.log("Logged-in user hourly rate:", loggedInUserHourlyRate);
+
       const loadedProjects = await loadProjectsFromStorage();
-  
+
       if (!Array.isArray(loadedProjects)) {
-        console.error('Projects data is not an array or undefined.');
+        console.error("Projects data is not an array or undefined.");
         return;
       }
-  
-      const userProjects = loadedProjects.filter((project) => project.createdBy === loggedInUser.email);
-  
+
+      const userProjects = loadedProjects.filter(
+        (project) => project.createdBy === loggedInUser.email
+      );
+
       if (Array.isArray(userProjects) && userProjects.length > 0) {
         const tasks = await loadTasksFromStorage();
+        console.log(tasks);
         const projectsWithCost = userProjects.map((project) => {
           const status = computeProjectStatus(project.id, tasks);
-          const cost = computeProjectCost(project.id, tasks, loggedInUserHourlyRate);
+          const cost = computeProjectCost(
+            project.id,
+            tasks,
+            loggedInUserHourlyRate
+          );
           return { ...project, status, cost };
         });
-  
+
         setFilteredProjects(projectsWithCost);
       } else {
         setFilteredProjects([]);
-        console.log('No projects found for the logged-in user.');
+        console.log("No projects found for the logged-in user.");
       }
     } catch (error) {
-      console.error('Error retrieving user data or projects:', error);
+      console.error("Error retrieving user data or projects:", error);
     }
   }, [email]);
-  
-  
 
   useEffect(() => {
     retrieveProjects();
   }, [retrieveProjects]);
-  
+
   const openAddProjectModal = () => {
     setAddingProject(true);
   };
@@ -199,128 +204,132 @@ const ProjectScreen = ({ navigation, route, email }) => {
   const renderItem = ({ item }) => {
     return (
       <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-      <TouchableOpacity
-        onPress={() => navigation.navigate("Task", { projectId: item.id })}
-        style={styles.projectItem}
-      >
-     
-        <View style={styles.projectDetails}>
-          <Text style={styles.projectName}>{item.name}</Text>
-          <Text style={styles.projectDescription}>{item.description}</Text>
-          <Text style={styles.projectStatus}>Status: {item.status}</Text>
-          <Text style={styles.projectCost}>Cost: ${item.cost}</Text>
-        </View>
-        <View style={styles.editDeleteButtons}>
-        <Button icon="pencil" onPress={() => handleEdit(item)}>
-          Edit
-        </Button>
-        <Button icon="delete" onPress={() => handleDelete(item.id)}>
-          Delete
-        </Button>
-      </View>
-      
-      </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => navigation.navigate("Task", { projectId: item.id })}
+          style={styles.projectItem}
+        >
+          <View style={styles.projectDetails}>
+            <Text style={styles.projectName}>{item.name}</Text>
+            <Text style={styles.projectDescription}>{item.description}</Text>
+            <Text style={styles.projectStatus}>Status: {item.status}</Text>
+            <Text style={styles.projectCost}>Cost: ${item.cost}</Text>
+          </View>
+          <View style={styles.editDeleteButtons}>
+            <Button icon="pencil" onPress={() => handleEdit(item)}>
+              Edit
+            </Button>
+            <Button icon="delete" onPress={() => handleDelete(item.id)}>
+              Delete
+            </Button>
+          </View>
+        </TouchableOpacity>
       </TouchableWithoutFeedback>
     );
   };
 
-
   return (
-    <SafeAreaView  style={styles.safeArea}>
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-      <View style={styles.container}>
-        <View style={styles.userInfo}>
-          <Text style={styles.greeting}>Hello, {email}</Text>
-          <Text style={styles.projectHeader}>Your Projects:</Text>
-          <TextInput
-            label="Search by name or description"
-            value={searchQuery}
-            onChangeText={handleSearch}
-            onBlur={handleBlur}
-            style={[styles.searchInput, { width: 380, height:50}]}
-            theme={{ colors: { primary: '#9DB5B2' } }}
-          />
-       </View>
+    <SafeAreaView style={styles.safeArea}>
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+        <View style={styles.container}>
+          <View style={styles.userInfo}>
+            <Text style={styles.greeting}>Hello, {email}</Text>
+            <Text style={styles.projectHeader}>Your Projects:</Text>
+            <TextInput
+              label="Search by name or description"
+              value={searchQuery}
+              onChangeText={handleSearch}
+              onBlur={handleBlur}
+              style={[styles.searchInput, { width: 380, height: 50 }]}
+              theme={{ colors: { primary: "#9DB5B2" } }}
+            />
+          </View>
 
-      <FlatList
-        data={filteredProjects}
-        keyExtractor={(item) => item.id.toString()}
-        renderItem={renderItem}
-        onLayout={getItemWidth}
-      />
-
-      <Button
-        mode="contained"
-        onPress={openAddProjectModal}
-        style={styles.addButton}
-      >
-        Add Project
-      </Button>
-
-      <Modal
-      visible={isAddingProject || editingProject !== null}
-      animationType="slide"
-      transparent={true}
-      onRequestClose={() => {
-        setAddingProject(false);
-        setEditingProject(null);
-      }}
-    >
-      <View style={styles.modalContainer}>
-        <View
-          style={[
-            styles.modalContent,
-            { width: modalWidth, maxHeight: modalHeight },
-          ]}
-        >
-          <Text style={styles.modalTitle}>
-            {editingProject ? "Edit Project" : "Add Project"}
-          </Text>
-          <TextInput
-            label="Project Name"
-            value={editingProject ? editingProject.name : newProjectName}
-            onChangeText={editingProject
-              ? (value) =>
-                  setEditingProject({ ...editingProject, name: value })
-              : setNewProjectName}
-            style={styles.input}
+          <FlatList
+            data={filteredProjects}
+            keyExtractor={(item) => item.id.toString()}
+            renderItem={renderItem}
+            onLayout={getItemWidth}
           />
-          <TextInput
-            label="Project Description"
-            value={
-              editingProject
-                ? editingProject.description
-                : newProjectDescription
-            }
-            onChangeText={editingProject
-              ? (value) =>
-                  setEditingProject({ ...editingProject, description: value })
-              : setNewProjectDescription}
-            style={styles.input}
-          />
+
           <Button
             mode="contained"
-            onPress={editingProject ? saveEditedProject : addNewProject}
-            style={styles.button}
+            onPress={openAddProjectModal}
+            style={styles.addButton}
           >
-            {editingProject ? "Save" : "Add Project"}
+            Add Project
           </Button>
-          <Button
-            mode="outlined"
-            onPress={() => {
+
+          <Modal
+            visible={isAddingProject || editingProject !== null}
+            animationType="slide"
+            transparent={true}
+            onRequestClose={() => {
               setAddingProject(false);
               setEditingProject(null);
-              setNewProjectName("");
-              setNewProjectDescription("");
             }}
-            style={styles.button}
           >
-            Cancel
-          </Button>
+            <View style={styles.modalContainer}>
+              <View
+                style={[
+                  styles.modalContent,
+                  { width: modalWidth, maxHeight: modalHeight },
+                ]}
+              >
+                <Text style={styles.modalTitle}>
+                  {editingProject ? "Edit Project" : "Add Project"}
+                </Text>
+                <TextInput
+                  label="Project Name"
+                  value={editingProject ? editingProject.name : newProjectName}
+                  onChangeText={
+                    editingProject
+                      ? (value) =>
+                          setEditingProject({ ...editingProject, name: value })
+                      : setNewProjectName
+                  }
+                  style={styles.input}
+                />
+                <TextInput
+                  label="Project Description"
+                  value={
+                    editingProject
+                      ? editingProject.description
+                      : newProjectDescription
+                  }
+                  onChangeText={
+                    editingProject
+                      ? (value) =>
+                          setEditingProject({
+                            ...editingProject,
+                            description: value,
+                          })
+                      : setNewProjectDescription
+                  }
+                  style={styles.input}
+                />
+                <Button
+                  mode="contained"
+                  onPress={editingProject ? saveEditedProject : addNewProject}
+                  style={styles.button}
+                >
+                  {editingProject ? "Save" : "Add Project"}
+                </Button>
+                <Button
+                  mode="outlined"
+                  onPress={() => {
+                    setAddingProject(false);
+                    setEditingProject(null);
+                    setNewProjectName("");
+                    setNewProjectDescription("");
+                  }}
+                  style={styles.button}
+                >
+                  Cancel
+                </Button>
+              </View>
+            </View>
+          </Modal>
         </View>
-      </View>
-    </Modal>
-      </View>
       </TouchableWithoutFeedback>
     </SafeAreaView>
   );
@@ -419,12 +428,12 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     marginBottom: 10,
-    backgroundColor: 'white',
+    backgroundColor: "white",
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 8,
     elevation: 2,
-    shadowColor: 'black',
+    shadowColor: "black",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 2,

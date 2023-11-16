@@ -1,4 +1,4 @@
-import React, { useState, useEffect , useMemo} from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   View,
   Text,
@@ -29,6 +29,13 @@ const TaskScreen = ({ route, navigation }) => {
   const [project, setProject] = useState(null);
   const [projectTasks, setProjectTasks] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedStatus, setSelectedStatus] = useState("All");
+  const [isAddingTask, setAddingTask] = useState(false);
+  const [taskName, setTaskName] = useState("");
+  const [taskDescription, setTaskDescription] = useState("");
+  const [dueDate, setDueDate] = useState("");
+  const [assignedTo, setAssignedTo] = useState("");
+  const [editingTask, setEditingTask] = useState(null);
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -58,14 +65,6 @@ const TaskScreen = ({ route, navigation }) => {
     fetchData();
   }, [projectId]);
   const groupedTasks = groupTasksByStatus(projectTasks);
-
-  const [selectedStatus, setSelectedStatus] = useState("All");
-  const [isAddingTask, setAddingTask] = useState(false);
-  const [taskName, setTaskName] = useState("");
-  const [taskDescription, setTaskDescription] = useState("");
-  const [dueDate, setDueDate] = useState("");
-  const [assignedTo, setAssignedTo] = useState("");
-  const [editingTask, setEditingTask] = useState(null);
   const handleSearch = (query) => {
     setSearchQuery(query);
 
@@ -144,8 +143,8 @@ const TaskScreen = ({ route, navigation }) => {
 
   const handleAddTask = async () => {
     try {
-      const lastTask = projectTasks[projectTasks.length - 1]; 
-    
+      const lastTask = projectTasks[projectTasks.length - 1];
+
       const newTask = {
         projectId: projectId,
         name: taskName,
@@ -153,10 +152,10 @@ const TaskScreen = ({ route, navigation }) => {
         assignedTo: assignedTo,
         dueDate: dueDate,
         status: "Open",
-        dependencyId: lastTask ? lastTask.id : null, 
+        dependencyId: lastTask ? lastTask.id : null,
         hoursWorked: 0,
       };
-    
+
       await addTask(
         projectId,
         taskName,
@@ -171,18 +170,17 @@ const TaskScreen = ({ route, navigation }) => {
 
       const updatedTasks = [...projectTasks, newTask];
       setProjectTasks(updatedTasks);
-    
+
       setTaskName("");
       setTaskDescription("");
       setAssignedTo("");
       setDueDate("");
-    
+
       closeAddTaskModal();
     } catch (error) {
       console.error("Error adding task:", error);
     }
   };
-  
 
   const theme = useTheme();
 
@@ -244,7 +242,7 @@ const TaskScreen = ({ route, navigation }) => {
           label="Search by name or description"
           value={searchQuery}
           onChangeText={handleSearch}
-          style={[styles.searchInput, { width: 380, height:45}]}
+          style={[styles.searchInput, { width: 380, height: 45 }]}
           theme={{ colors: { primary: "#9DB5B2" } }}
         />
         <FlatList
@@ -355,7 +353,7 @@ const TaskScreen = ({ route, navigation }) => {
               </Button>
               <Button
                 mode="outlined"
-                onPress={handleCancel} 
+                onPress={handleCancel}
                 style={[styles.button, { borderColor: theme.colors.primary }]}
               >
                 Cancel

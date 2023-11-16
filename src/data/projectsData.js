@@ -6,7 +6,11 @@ function getRandomId() {
   return timestamp + randomNumber;
 }
 
-export async function addProject(newProjectName, newProjectDescription, createdBy) {
+export async function addProject(
+  newProjectName,
+  newProjectDescription,
+  createdBy
+) {
   const newProject = {
     id: getRandomId(),
     name: newProjectName,
@@ -17,11 +21,13 @@ export async function addProject(newProjectName, newProjectDescription, createdB
 
   try {
     const storedProjects = await loadProjectsFromStorage();
-    const updatedProjects = storedProjects ? [...storedProjects, newProject] : [newProject];
+    const updatedProjects = storedProjects
+      ? [...storedProjects, newProject]
+      : [newProject];
     await saveProjectsToStorage(updatedProjects);
     return true;
   } catch (error) {
-    console.log('Error adding project:', error);
+    console.log("Error adding project:", error);
     throw error;
   }
 }
@@ -29,32 +35,34 @@ export async function addProject(newProjectName, newProjectDescription, createdB
 export async function filterProjectsByUser(email) {
   try {
     const storedProjects = await loadProjectsFromStorage();
-    return storedProjects ? storedProjects.filter((project) => project.createdBy === email) : [];
+    return storedProjects
+      ? storedProjects.filter((project) => project.createdBy === email)
+      : [];
   } catch (error) {
-    console.log('Error filtering projects:', error);
+    console.log("Error filtering projects:", error);
     throw error;
   }
 }
 
 export async function loadProjectsFromStorage() {
   try {
-    const storedProjects = await AsyncStorage.getItem('projects');
+    const storedProjects = await AsyncStorage.getItem("projects");
     return storedProjects ? JSON.parse(storedProjects) : [];
   } catch (error) {
-    console.log('Error loading projects:', error);
+    console.log("Error loading projects:", error);
     throw error;
   }
 }
 
 export async function fetchProjectNameById(projectId) {
   try {
-    const storedProjects = await AsyncStorage.getItem('projects');
+    const storedProjects = await AsyncStorage.getItem("projects");
     const parsedProjects = storedProjects ? JSON.parse(storedProjects) : [];
-    
+
     const project = parsedProjects.find((proj) => proj.id === projectId);
     return project ? project.name : "Project Not Found";
   } catch (error) {
-    console.log('Error fetching project name:', error);
+    console.log("Error fetching project name:", error);
     throw error;
   }
 }
@@ -71,7 +79,9 @@ export async function saveProjectsToStorage(projects) {
 export async function updateProjectStatus(projectId, tasks) {
   try {
     const storedProjects = await loadProjectsFromStorage();
-    const projectToUpdate = storedProjects.find((project) => project.id === projectId);
+    const projectToUpdate = storedProjects.find(
+      (project) => project.id === projectId
+    );
 
     if (projectToUpdate) {
       const projectTasks = tasks.filter((task) => task.projectId === projectId);
@@ -93,8 +103,6 @@ export async function updateProjectStatus(projectId, tasks) {
   }
 }
 
-
-
 export function computeProjectStatus(projectId, tasks) {
   const projectTasks = tasks.filter((task) => task.projectId === projectId);
 
@@ -102,8 +110,12 @@ export function computeProjectStatus(projectId, tasks) {
     return "No tasks";
   }
 
-  const allTasksClosed = projectTasks.every((task) => task.status === "Closed");
-  const anyTaskInProgress = projectTasks.some((task) => task.status === "In Progress");
+  const allTasksClosed = projectTasks.every(
+    (task) => task.status === "Completed"
+  );
+  const anyTaskInProgress = projectTasks.some(
+    (task) => task.status === "In Progress"
+  );
 
   if (allTasksClosed) {
     return "Completed";
@@ -120,6 +132,7 @@ export function computeProjectCost(projectId, tasks, hourlyRate) {
 
   projectTasks.forEach((task) => {
     const storedHoursWorked = parseFloat(task.hoursWorked) || 0;
+    console.log({ storedHoursWorked, task });
     totalHoursWorked += storedHoursWorked;
   });
 
@@ -133,11 +146,11 @@ const loadHoursWorkedForTask = async (taskId) => {
   if (!storedHoursWorked) {
     try {
       const hours = await AsyncStorage.getItem(`hours_worked_${taskId}`);
-      storedHoursWorked = hours || '0';
+      storedHoursWorked = hours || "0";
       hoursWorkedData[taskId] = storedHoursWorked;
     } catch (error) {
       console.error(`Error loading hours worked for task ${taskId}:`, error);
-      storedHoursWorked = '0';
+      storedHoursWorked = "0";
     }
   }
   return parseFloat(storedHoursWorked);
@@ -154,7 +167,7 @@ export async function editProject(projectId, updatedProjectData) {
     await saveProjectsToStorage(updatedProjects);
     return true;
   } catch (error) {
-    console.log('Error editing project:', error);
+    console.log("Error editing project:", error);
     throw error;
   }
 }
@@ -167,7 +180,7 @@ export async function deleteProject(projectId) {
     await saveProjectsToStorage(updatedProjects);
     return true;
   } catch (error) {
-    console.log('Error deleting project:', error);
+    console.log("Error deleting project:", error);
     throw error;
   }
 }
